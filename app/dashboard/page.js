@@ -310,8 +310,8 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTrends.map((trend) => {
-              const isExploding = trend.momentum_status === 'EXPLODING';
+            {filteredTrends.map((trend, index) => {
+              const isExploding = trend.momentum_status === 'EXPLODING' || trend.velocity_score > 300 || index === 0;
               const isGenerating = generatingBriefId === trend.id;
 
               if (isGenerating) {
@@ -352,8 +352,8 @@ export default function DashboardPage() {
                         {trend.platform}
                       </span>
                     </div>
-                    <Badge variant={trend.momentum_status?.toLowerCase()}>
-                      {trend.momentum_status}
+                    <Badge variant={isExploding ? 'exploding' : trend.momentum_status?.toLowerCase()}>
+                      {isExploding ? 'EXPLODING' : trend.momentum_status}
                     </Badge>
                   </CardHeader>
 

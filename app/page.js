@@ -50,12 +50,21 @@ export default function LoginPage() {
     try {
       const user = await signInAsGuest();
       if (user) {
-        const niches = await getUserNiches();
-        if (niches && niches.length > 0) {
-          router.push('/dashboard');
-        } else {
-          router.push('/onboarding');
+        // Pre-seed the localStorage trends with the initial seed data
+        try {
+          const res = await fetch('/api/seed');
+          const seedData = await res.json();
+          if (seedData.success && seedData.data) {
+            localStorage.setItem('viralspy_demo_trends', JSON.stringify(seedData.data));
+          }
+        } catch (seedErr) {
+          console.warn('Failed to seed trends in background:', seedErr);
         }
+
+        // Set default niches in localStorage so they can access the dashboard immediately
+        localStorage.setItem('viralspy_demo_niches', JSON.stringify(['fitness', 'food', 'tech']));
+        
+        router.push('/dashboard');
       }
     } catch (err) {
       console.error('Guest Sign In Error:', err);
@@ -142,10 +151,10 @@ export default function LoginPage() {
               <button
                 onClick={handleGuestSignIn}
                 disabled={authLoading}
-                className="w-full flex items-center justify-center space-x-2 bg-transparent hover:bg-[#F4F2ED]/5 text-[#F4F2ED] border border-[#F4F2ED]/20 hover:border-[#F4F2ED] font-mono text-xs uppercase tracking-widest font-bold py-3.5 px-4 transition-all duration-300"
+                className="w-full flex items-center justify-center space-x-2 bg-[#F4F2ED]/5 hover:bg-[#F4F2ED] text-[#F4F2ED] hover:text-[#1A1A1A] border border-[#F4F2ED]/30 hover:border-[#F4F2ED] font-mono text-xs uppercase tracking-widest font-bold py-3.5 px-4 transition-all duration-300"
               >
-                <Sparkles className="h-4 w-4 text-purple-400" />
-                <span>Explore in Demo Mode (Guest)</span>
+                <Sparkles className="h-4 w-4 text-amber-400" />
+                <span>Explore Guest Terminal</span>
                 <ArrowRight className="h-4 w-4 ml-1" />
               </button>
             </div>

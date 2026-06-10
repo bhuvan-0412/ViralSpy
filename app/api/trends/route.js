@@ -40,7 +40,8 @@ export async function GET(request) {
   const processMockTrend = (item, index) => {
     const sparkline = item.sparkline;
     const current = sparkline[sparkline.length - 1];
-    const avg = sparkline.reduce((a, b) => a + b, 0) / sparkline.length;
+    const rawAvg = sparkline.reduce((a, b) => a + b, 0) / sparkline.length;
+    const avg = rawAvg === 0 || !rawAvg ? 1 : rawAvg;
     const score = Math.round((current / avg) * 100);
     
     let momentum = 'PEAKED';

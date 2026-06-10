@@ -37,7 +37,8 @@ export async function GET() {
   const trendsToInsert = MOCK_TRENDS.map((item, index) => {
     const sparkline = item.sparkline;
     const current = sparkline[sparkline.length - 1];
-    const avg = sparkline.reduce((a, b) => a + b, 0) / sparkline.length;
+    const rawAvg = sparkline.reduce((a, b) => a + b, 0) / sparkline.length;
+    const avg = rawAvg === 0 || !rawAvg ? 1 : rawAvg;
     const velocity_score = Math.round((current / avg) * 100);
     
     let momentum_status = 'PEAKED';
