@@ -79,7 +79,7 @@ export default function DashboardPage() {
                 )}
               </div>
               <p className="text-[10px] font-mono text-gray-500 uppercase tracking-wider hidden sm:block">
-                Catch trends 48 hours before they peak
+                Catch trends across YouTube Shorts, Instagram Reels and Reddit — 48 hours early
               </p>
             </div>
           </div>
@@ -87,11 +87,6 @@ export default function DashboardPage() {
           {/* User profile & Actions */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2.5">
-              <img
-                src={profile?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80'}
-                alt={profile?.display_name || 'Creator'}
-                className="h-8 w-8 rounded-full border border-gray-800 object-cover"
-              />
               <span className="text-xs text-gray-400 font-mono hidden md:inline">
                 {profile?.display_name || 'Demo Creator'}
               </span>

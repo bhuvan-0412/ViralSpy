@@ -1,6 +1,6 @@
 # ViralSpy // SpecKit Predictor MVP
 
-A full-stack trend prediction SaaS for content creators. ViralSpy detects TikTok, YouTube, and Instagram trends 48 hours before they hit peak algorithmic saturation and generates immediate, ready-to-film content briefs.
+A full-stack trend prediction SaaS for content creators. ViralSpy detects YouTube Shorts, Instagram Reels, and Reddit trends 48 hours before they hit peak algorithmic saturation and generates immediate, ready-to-film content briefs.
 
 ---
 

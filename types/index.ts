@@ -15,7 +15,7 @@ export type NicheType =
   | 'business'
   | 'other';
 
-export type PlatformType = 'TIKTOK' | 'YOUTUBE' | 'INSTAGRAM' | 'REDDIT' | 'X';
+export type PlatformType = 'YOUTUBE' | 'INSTAGRAM' | 'REDDIT' | 'X';
 
 export type MomentumStatusType = 'RISING' | 'EXPLODING' | 'PEAKED' | 'DEAD';
 

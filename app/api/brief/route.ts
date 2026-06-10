@@ -94,7 +94,7 @@ export async function GET(request: Request) {
   }
 
   const getSimulatedBrief = () => {
-    const mockBrief = generateMockBrief("somatic shaking exercise", "fitness", "TIKTOK", 268.29, "RISING");
+    const mockBrief = generateMockBrief("somatic shaking exercise", "fitness", "INSTAGRAM", 268.29, "RISING");
     return {
       id: briefId,
       trend_id: 'demo-trend-uuid-6',
@@ -178,7 +178,7 @@ export async function POST(request: Request) {
     // Fetch the trend details
     let trendName = "somatic shaking exercise";
     let niche = "fitness";
-    let platform = "TIKTOK";
+    let platform = "INSTAGRAM";
     let velocityScore = 268.29;
     let momentumStatus = "RISING";
     let dbTrendId = trendId;

@@ -4,7 +4,7 @@ import AuthProvider from '../components/AuthProvider';
 
 export const metadata = {
   title: 'ViralSpy — High-Velocity Trend Prediction Terminal',
-  description: 'Catch TikTok, YouTube, and Instagram trends 48 hours before they peak.',
+  description: 'Catch YouTube Shorts, Instagram Reels, and Reddit trends 48 hours before they peak.',
 };
 
 export default function RootLayout({

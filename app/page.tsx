@@ -85,7 +85,7 @@ export default function EntryPage() {
           </h1>
 
           <p className="text-gray-400 text-sm leading-relaxed max-w-lg">
-            Stop guessing what to film. ViralSpy detects TikTok, YouTube, and Instagram trends 48 hours before they peak, generating strategist-grade content briefs automatically.
+            Stop guessing what to film. ViralSpy detects YouTube Shorts, Instagram Reels, and Reddit trends 48 hours before they peak, generating strategist-grade content briefs automatically.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 text-left border-t border-gray-800">

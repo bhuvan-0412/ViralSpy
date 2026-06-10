@@ -21,9 +21,10 @@ const NICHES: { id: NicheType; label: string; desc: string }[] = [
 ];
 
 const PLATFORMS = [
-  { id: 'TIKTOK', label: 'TikTok' },
   { id: 'YOUTUBE', label: 'YouTube' },
   { id: 'INSTAGRAM', label: 'Instagram' },
+  { id: 'REDDIT', label: 'Reddit' },
+  { id: 'X', label: 'X' },
   { id: 'ALL', label: 'All Platforms' }
 ];
 
@@ -72,7 +73,7 @@ export default function OnboardingPage() {
       if (selectedPlatforms.includes('ALL')) {
         setSelectedPlatforms([]);
       } else {
-        setSelectedPlatforms(['TIKTOK', 'YOUTUBE', 'INSTAGRAM', 'ALL']);
+        setSelectedPlatforms(['YOUTUBE', 'INSTAGRAM', 'REDDIT', 'X', 'ALL']);
       }
       return;
     }
@@ -84,7 +85,7 @@ export default function OnboardingPage() {
       updated.push(platformId);
     }
 
-    if (updated.includes('TIKTOK') && updated.includes('YOUTUBE') && updated.includes('INSTAGRAM')) {
+    if (updated.includes('YOUTUBE') && updated.includes('INSTAGRAM') && updated.includes('REDDIT') && updated.includes('X')) {
       updated.push('ALL');
     }
     
