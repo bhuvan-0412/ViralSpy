@@ -7,7 +7,7 @@ export function Button({
   children,
   ...props
 }) {
-  const baseClasses = 'inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest transition-all duration-300 font-bold focus:outline-none';
+  const baseClasses = 'inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest transition-all duration-300 font-bold focus:outline-none rounded-none';
 
   const variants = {
     primary: 'bg-[#F4F2ED] text-[#1A1A1A] hover:bg-transparent hover:text-[#F4F2ED] border border-[#F4F2ED]',

@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, getUserNiches, signOutUser, isDemoModeActive } from '../../lib/supabase';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
-import { Skeleton } from '../../components/ui/Skeleton';
-import Sparkline from '../../components/Sparkline';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/SpecKit/Card';
+import { Button } from '@/components/SpecKit/Button';
+import { Badge } from '@/components/SpecKit/Badge';
+import { Skeleton } from '@/components/SpecKit/Skeleton';
+import Sparkline from '@/components/SpecKit/Sparkline';
 import { LogOut, Sliders, RefreshCw, Sparkles } from 'lucide-react';
 
 // Platform icons as lightweight inline SVGs to avoid compilation errors

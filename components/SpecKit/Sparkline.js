@@ -36,18 +36,18 @@ export default function Sparkline({ data = [], status = 'PEAKED' }) {
     : '';
 
   let strokeColor = 'rgba(244, 242, 237, 0.25)'; 
-  let gradientId = 'grad-peaked';
+  let gradientId = 'grad-peaked-spec';
   let stopColor1 = 'rgba(244, 242, 237, 0.05)';
   let stopColor2 = 'rgba(244, 242, 237, 0.0)';
 
   if (status === 'EXPLODING') {
     strokeColor = '#ef4444'; 
-    gradientId = 'grad-exploding';
+    gradientId = 'grad-exploding-spec';
     stopColor1 = 'rgba(239, 68, 68, 0.2)';
     stopColor2 = 'rgba(239, 68, 68, 0.0)';
   } else if (status === 'RISING') {
     strokeColor = '#F4F2ED'; 
-    gradientId = 'grad-rising';
+    gradientId = 'grad-rising-spec';
     stopColor1 = 'rgba(244, 242, 237, 0.1)';
     stopColor2 = 'rgba(244, 242, 237, 0.0)';
   }

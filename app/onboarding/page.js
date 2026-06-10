@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, saveUserNiches, getUserNiches } from '../../lib/supabase';
-import { Button } from '../../components/ui/Button';
+import { Button } from '@/components/SpecKit/Button';
 
 const NICHES = [
   { id: 'fitness', name: 'Fitness & Health', desc: 'Workouts, nutrition, physical challenges' },

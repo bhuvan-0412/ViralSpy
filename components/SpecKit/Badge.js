@@ -6,7 +6,7 @@ export function Badge({
   children,
   ...props
 }) {
-  const baseClasses = 'inline-flex items-center px-2.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider border';
+  const baseClasses = 'inline-flex items-center px-2.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider border rounded-none';
 
   const variants = {
     default: 'bg-transparent text-[#F4F2ED]/80 border-[#F4F2ED]/20',

@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getCurrentUser, isDemoModeActive } from '../../../lib/supabase';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/SpecKit/Card';
+import { Button } from '@/components/SpecKit/Button';
+import { Badge } from '@/components/SpecKit/Badge';
 import { ArrowLeft, Copy, Check, Calendar, TrendingUp, Video, Hash } from 'lucide-react';
 
 export default function BriefDetailsPage() {
