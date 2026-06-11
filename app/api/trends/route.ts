@@ -89,7 +89,12 @@ export async function GET(request: Request) {
       const { data, error } = await supabase
         .from('trends')
         .select('*')
-        .order('velocity_score', { ascending: false });
+        .order('velocity_score', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('Supabase trends error:', error.message, '| code:', error.code);
+      }
 
       if (data && data.length > 0) {
         return NextResponse.json({ success: true, data });

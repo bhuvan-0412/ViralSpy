@@ -161,16 +161,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Missing trendId parameter.' }, { status: 400 });
     }
 
-    if (supabase && !trendId.startsWith('demo-') && (!userId || !userId.startsWith('demo-'))) {
+    // Only use Supabase if trendId is a real UUID (not a demo placeholder)
+    const isRealTrend = supabase && !trendId.startsWith('demo-');
+
+    if (isRealTrend) {
       // Delete cached brief if forceRegenerate requested
       if (forceRegenerate) {
-        await supabase
+        await supabase!
           .from('briefs')
           .delete()
           .eq('trend_id', trendId);
       } else {
-        // Check if brief already exists
-        const { data: existing, error: findError } = await supabase
+        // Cache hit: return existing brief
+        const { data: existing, error: findError } = await supabase!
           .from('briefs')
           .select('*')
           .eq('trend_id', trendId)
@@ -195,7 +198,7 @@ export async function POST(request: Request) {
     let momentumStatus = "RISING";
     let dbTrendId = trendId;
 
-    if (supabase && !trendId.startsWith('demo-')) {
+    if (isRealTrend) {
       const { data: trendData } = await supabase
         .from('trends')
         .select('*')
@@ -273,7 +276,8 @@ Momentum: ${momentumStatus}`;
       created_at: new Date().toISOString()
     };
 
-    if (!supabase || trendId.startsWith('demo-') || (userId && userId.startsWith('demo-'))) {
+    // Only use fallback (no DB save) if trendId is a demo placeholder
+    if (!supabase || trendId.startsWith('demo-')) {
       return NextResponse.json({
         success: true,
         data: {

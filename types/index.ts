@@ -43,8 +43,8 @@ export interface Trend {
   detected_at: string;
   peaked_at?: string | null;
   expires_at?: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TrendSnapshot {

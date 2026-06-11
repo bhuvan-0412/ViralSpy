@@ -93,7 +93,10 @@ export async function GET() {
       .insert(trendsToInsert)
       .select();
 
-    if (trendsError) throw trendsError;
+    if (trendsError) {
+      console.error('Seed insert error:', trendsError.message, '| code:', trendsError.code, '| details:', trendsError.details, '| hint:', trendsError.hint);
+      throw trendsError;
+    }
 
     // Insert 4 snapshots per trend
     if (insertedTrends) {
