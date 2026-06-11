@@ -106,12 +106,12 @@ export async function GET() {
             momentum_status: status,
             confidence_score: Math.min(0.95, score / 500),
             detected_at: new Date().toISOString()
-          }, { onConflict: 'name,platform' })
+          }, { onConflict: 'name,platform', ignoreDuplicates: false })
           .select()
           .single();
 
         if (error) {
-          results.errors.push(`YouTube upsert: ${error.message}`);
+          results.errors.push(`YouTube upsert: ${error.message} | code: ${error.code} | details: ${error.details}`);
           continue;
         }
 
@@ -184,12 +184,12 @@ export async function GET() {
             momentum_status: status,
             confidence_score: Math.min(0.90, vScore / 500),
             detected_at: new Date().toISOString()
-          }, { onConflict: 'name,platform' })
+          }, { onConflict: 'name,platform', ignoreDuplicates: false })
           .select()
           .single();
 
         if (error) {
-          results.errors.push(`Reddit/${sub} upsert: ${error.message}`);
+          results.errors.push(`Reddit/${sub} upsert: ${error.message} | code: ${error.code} | details: ${error.details}`);
           continue;
         }
 
@@ -252,12 +252,12 @@ export async function GET() {
           momentum_status: status,
           confidence_score: Math.min(0.85, score / 500),
           detected_at: new Date().toISOString()
-        }, { onConflict: 'name,platform' })
+        }, { onConflict: 'name,platform', ignoreDuplicates: false })
         .select()
         .single();
 
       if (error) {
-        results.errors.push(`Instagram/${keyword} upsert: ${error.message}`);
+        results.errors.push(`Instagram/${keyword} upsert: ${error.message} | code: ${error.code} | details: ${error.details}`);
         continue;
       }
 
