@@ -150,15 +150,19 @@ export async function GET() {
   for (const { sub, niche } of subreddits) {
     try {
       const res = await fetch(
-        `https://www.reddit.com/r/${sub}/rising.json?limit=5`,
+        `https://www.reddit.com/r/${sub}/rising.json?limit=5&raw_json=1`,
         {
           headers: {
-            'User-Agent': 'ViralSpy/1.0',
-            'Accept': 'application/json'
-          }
+            'User-Agent': 'ViralSpy:v1.0 (by /u/viralspy_app)',
+            'Accept': 'application/json',
+          },
+          cache: 'no-store'
         }
       );
-      const data = await res.json();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      if (text.startsWith('<')) throw new Error('Reddit returned HTML - rate limited');
+      const data = JSON.parse(text);
       const posts = data?.data?.children || [];
 
       for (const post of posts) {
