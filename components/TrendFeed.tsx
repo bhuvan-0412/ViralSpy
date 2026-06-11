@@ -13,9 +13,11 @@ interface TrendFeedProps {
   trends: Trend[];
   setTrends: React.Dispatch<React.SetStateAction<Trend[]>>;
   onBriefGenerated?: () => void;
+  onPollLiveData?: () => Promise<void>;
+  isPollLoading?: boolean;
 }
 
-export default function TrendFeed({ trends, setTrends, onBriefGenerated }: TrendFeedProps) {
+export default function TrendFeed({ trends, setTrends, onBriefGenerated, onPollLiveData, isPollLoading = false }: TrendFeedProps) {
   const router = useRouter();
   const [selectedNiche, setSelectedNiche] = useState<string>('all');
   const [generatingTrendId, setGeneratingTrendId] = useState<string | null>(null);

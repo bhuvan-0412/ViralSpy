@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/AuthProvider';
 import { supabase, signOutUser, getUserProfile, isDemoModeActive } from '../../lib/supabase';
@@ -8,7 +8,7 @@ import { UserProfile, Trend } from '../../types';
 import TrendFeed from '../../components/TrendFeed';
 import Sparkline from '../../components/Sparkline';
 import Logo from '../../components/Logo';
-import { Zap, LogOut, Eye, ShieldAlert, TrendingUp, Flame, Activity, FileText } from 'lucide-react';
+import { LogOut, Eye, TrendingUp, Flame, Activity, FileText, RefreshCw, CheckCircle } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -18,6 +18,11 @@ export default function DashboardPage() {
   const [loadingTrends, setLoadingTrends] = useState(true);
   const [isDemo, setIsDemo] = useState(false);
   const [briefsCount, setBriefsCount] = useState(0);
+  const [isPollLoading, setIsPollLoading] = useState(false);
+  const [pollToast, setPollToast] = useState<{ count: number } | null>(null);
+  const [lastPolledAt, setLastPolledAt] = useState<Date | null>(null);
+  const [lastPolledLabel, setLastPolledLabel] = useState<string>('');
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -49,6 +54,52 @@ export default function DashboardPage() {
       console.error('Error loading dashboard data:', err);
     } finally {
       setLoadingTrends(false);
+    }
+  };
+
+  // Compute human-readable "X minutes ago" label from a Date
+  const computeLastPolledLabel = useCallback((date: Date | null) => {
+    if (!date) return '';
+    const diffMs = Date.now() - date.getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins <= 0) return 'just now';
+    if (mins === 1) return '1 minute ago';
+    return `${mins} minutes ago`;
+  }, []);
+
+  // Update label every 60s
+  useEffect(() => {
+    if (!lastPolledAt) return;
+    setLastPolledLabel(computeLastPolledLabel(lastPolledAt));
+    const id = setInterval(() => {
+      setLastPolledLabel(computeLastPolledLabel(lastPolledAt));
+    }, 60000);
+    return () => clearInterval(id);
+  }, [lastPolledAt, computeLastPolledLabel]);
+
+  const handlePollLiveData = async () => {
+    if (isPollLoading) return;
+    setIsPollLoading(true);
+    const prevCount = trends.length;
+    try {
+      await fetch('/api/poll');
+      const res = await fetch('/api/trends');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setTrends(data.data);
+        const newCount = Math.max(0, data.data.length - prevCount);
+        const now = new Date();
+        setLastPolledAt(now);
+        setLastPolledLabel(computeLastPolledLabel(now));
+        // Show toast
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        setPollToast({ count: newCount });
+        toastTimer.current = setTimeout(() => setPollToast(null), 4000);
+      }
+    } catch (err) {
+      console.error('Live poll failed:', err);
+    } finally {
+      setIsPollLoading(false);
     }
   };
 
@@ -151,7 +202,14 @@ export default function DashboardPage() {
           </nav>
 
           {/* Avatar / SignOut Right */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
+            {/* Last updated timestamp */}
+            {lastPolledLabel && (
+              <span className="hidden lg:flex items-center space-x-1.5 text-[10px] font-semibold text-gray-400 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+                <span>Last updated: {lastPolledLabel}</span>
+              </span>
+            )}
             <div className="flex items-center space-x-2.5">
               <span className="text-xs text-gray-500 font-semibold hidden md:inline">
                 {profile?.display_name || 'Demo Creator'}
@@ -174,6 +232,18 @@ export default function DashboardPage() {
 
       {/* Main Body */}
       <main className="flex-grow max-w-7xl mx-auto w-full py-8 px-4 sm:px-6 space-y-8">
+
+        {/* Poll Success Toast */}
+        {pollToast && (
+          <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 bg-[#1A1A1A] text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl animate-fade-up">
+            <CheckCircle className="h-4 w-4 text-green-400 shrink-0" />
+            <span>
+              {pollToast.count > 0
+                ? `✓ Live data updated — ${pollToast.count} new trend${pollToast.count === 1 ? '' : 's'} detected`
+                : '✓ Live data updated — feed refreshed'}
+            </span>
+          </div>
+        )}
         
 
 
@@ -252,9 +322,21 @@ export default function DashboardPage() {
 
         {/* Signals Section */}
         <div className="space-y-4 animate-fade-up delay-150">
-          <div className="space-y-0.5">
-            <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">Signal Feed</h2>
-            <p className="text-xs text-gray-500 font-medium">Breakout vectors calculated in real-time from ingest nodes.</p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-0.5">
+              <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">Signal Feed</h2>
+              <p className="text-xs text-gray-500 font-medium">Breakout vectors calculated in real-time from ingest nodes.</p>
+            </div>
+            {/* Refresh Live Data button — sits alongside Reseed intel inside TrendFeed */}
+            <button
+              id="refresh-live-data-btn"
+              onClick={handlePollLiveData}
+              disabled={isPollLoading}
+              className="flex items-center space-x-1.5 px-3 py-2 bg-[#FF6B4A] hover:bg-[#ff5a33] text-white text-xs font-semibold rounded-xl transition-all disabled:opacity-60 disabled:pointer-events-none shrink-0"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isPollLoading ? 'animate-spin' : ''}`} />
+              <span>{isPollLoading ? 'Polling...' : '🔄 Refresh Live Data'}</span>
+            </button>
           </div>
 
           {loadingTrends ? (
@@ -279,6 +361,8 @@ export default function DashboardPage() {
               trends={trends}
               setTrends={setTrends}
               onBriefGenerated={() => setBriefsCount((prev) => prev + 1)}
+              onPollLiveData={handlePollLiveData}
+              isPollLoading={isPollLoading}
             />
           )}
         </div>
