@@ -2,8 +2,8 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../components/AuthProvider';
-import { signInWithGoogle, signInAsGuest, getUserProfile } from '../lib/supabase';
+import { useAuth } from '../../components/AuthProvider';
+import { signInWithGoogle, signInAsGuest, getUserProfile } from '../../lib/supabase';
 import { Sparkles, Eye, ArrowRight, Shield } from 'lucide-react';
 
 export default function EntryPage() {

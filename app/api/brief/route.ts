@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '../../../lib/supabase-server';
-import { openai, isOpenAiConfigured } from '../../../lib/openai';
+import { generateBrief } from '../../../lib/ai-provider';
 import { Brief, BriefFormatType, Angle } from '../../../types';
 
 function generateMockBrief(
@@ -205,62 +205,39 @@ export async function POST(request: Request) {
         .eq('id', trendId)
         .maybeSingle();
 
-      if (trendData) {
-        trendName = trendData.name;
-        niche = trendData.niche;
-        platform = trendData.platform;
-        velocityScore = Number(trendData.velocity_score);
-        momentumStatus = trendData.momentum_status;
-        dbTrendId = trendData.id;
+      // After fetching trend data, ensure it exists
+      if (!trendData) {
+        return NextResponse.json({ success: false, error: 'Trend not found' }, { status: 404 });
       }
+      trendName = trendData.name;
+      niche = trendData.niche;
+      platform = trendData.platform;
+      velocityScore = Number(trendData.velocity_score);
+      momentumStatus = trendData.momentum_status;
+      dbTrendId = trendData.id;
     }
 
     let strategistBrief = generateMockBrief(trendName, niche, platform, velocityScore, momentumStatus);
 
-    if (isOpenAiConfigured() && openai) {
-      try {
-        const systemPrompt = `You are a viral content strategist who has helped 500+ creators hit 1M+ views.
-Given a trending topic, generate a highly specific, actionable content brief.
-Do NOT be generic. Every suggestion must be tailored to the exact trend.
+    try {
+      const provider = request.headers.get('x-ai-provider') as any || 'gemini';
+      const byokKey = request.headers.get('x-byok-key') || undefined;
+      const byokProvider = (request.headers.get('x-byok-provider') as 'gemini' | 'openai') || 'gemini';
+      const ollamaUrl = request.headers.get('x-ollama-url') || 'http://localhost:11434';
+      const ollamaModel = request.headers.get('x-ollama-model') || 'llama3';
+      const lang = request.headers.get('x-locale') || 'en';
 
-Respond ONLY with valid JSON, no markdown, no preamble:
-{
-  "hook": "under-8-word killer opening line that stops the scroll",
-  "angles": [
-    { "title": "Angle name", "description": "2-sentence specific description of exactly what to film" },
-    { "title": "Angle name", "description": "2-sentence specific description of exactly what to film" },
-    { "title": "Angle name", "description": "2-sentence specific description of exactly what to film" }
-  ],
-  "format": "TALKING_HEAD or POV or DUET or TUTORIAL or STORYTIME or TRANSITION",
-  "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"],
-  "best_post_time": "e.g. 6–8 PM weekdays, 11 AM–1 PM weekends",
-  "estimated_reach": "e.g. 80K–300K views for a 10K-follower account",
-  "script_outline": "Act 1 (0–3s): hook. Act 2 (3–20s): build. Act 3 (20–30s): payoff/CTA"
-}`;
-
-        const userPrompt = `Trend: ${trendName}
-Niche: ${niche}
-Platform: ${platform}
-Current velocity: ${velocityScore} (posts/hour rate vs 24h average)
-Momentum: ${momentumStatus}`;
-
-        const response = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          response_format: { type: 'json_object' }
-        });
-
-        const rawJson = response.choices[0].message.content || '';
-        const parsed = JSON.parse(rawJson);
-        if (parsed.hook && parsed.angles && parsed.format) {
-          strategistBrief = parsed;
-        }
-      } catch (err: any) {
-        console.warn('GPT-4o brief generation error, falling back to mock:', err.message);
+      const briefResult = await generateBrief(
+        { trendName, niche, platform, velocityScore, momentumStatus },
+        provider,
+        { byokKey, byokProvider, ollamaUrl, ollamaModel, lang }
+      );
+      
+      if (briefResult && typeof briefResult === 'object' && 'hook' in briefResult) {
+        strategistBrief = briefResult as any;
       }
+    } catch (err: any) {
+      console.warn('AI brief generation error, falling back to mock:', err.message);
     }
 
     const briefData = {

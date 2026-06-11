@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Brief, Trend } from '../types';
 import MomentumBadge from './MomentumBadge';
+import { useTranslations } from 'next-intl';
+import { formatIndianNumber } from '../lib/format';
 import { Copy, Check, Clock, Eye, Video, Hash, ArrowLeft, RotateCw, Share2 } from 'lucide-react';
 
 interface BriefCardProps {
@@ -14,6 +16,7 @@ interface BriefCardProps {
 }
 
 export default function BriefCard({ brief, trend, onRegenerate, onBack, isRegenerating = false }: BriefCardProps) {
+  const t = useTranslations('brief');
   const [copiedHook, setCopiedHook] = useState(false);
   const [copiedTagIdx, setCopiedTagIdx] = useState<number | null>(null);
   const [copiedSummary, setCopiedSummary] = useState(false);
@@ -85,7 +88,7 @@ Generated via ViralSpy`;
           onClick={onBack}
           className="text-sm font-semibold text-gray-500 hover:text-[#FF6B4A] transition-colors"
         >
-          ← Back to trends
+          {t('back')}
         </button>
         <div className="flex items-center space-x-3">
           <button
@@ -115,7 +118,7 @@ Generated via ViralSpy`;
         <div className="flex items-center space-x-4 sm:border-l sm:border-gray-150 sm:pl-4">
           <div className="text-right">
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Velocity</div>
-            <div className="text-lg font-black text-[#1A1A1A]">{trend.velocity_score}%</div>
+            <div className="text-lg font-black text-[#1A1A1A]">{formatIndianNumber(trend.velocity_score)}%</div>
           </div>
           <MomentumBadge status={trend.momentum_status} />
         </div>
@@ -123,14 +126,14 @@ Generated via ViralSpy`;
 
       {/* Hook Segment */}
       <div className="bg-white border border-gray-200 border-l-4 border-l-[#FF6B4A] rounded-2xl p-6 relative overflow-hidden shadow-card">
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-3">[HOOK FORMULA]</span>
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-3">[{t('hook')}]</span>
         <blockquote className="text-xl sm:text-2xl font-semibold text-[#1A1A1A] italic pr-12 leading-relaxed">
           &ldquo;{brief.hook}&rdquo;
         </blockquote>
         <button
           onClick={() => copyToClipboard(brief.hook, 'hook')}
           className="absolute top-6 right-6 p-2.5 rounded-full bg-gray-50 hover:bg-orange-50 border border-gray-200 text-gray-500 hover:text-[#FF6B4A] transition-all"
-          title="Copy Hook"
+          title={t('copyHook')}
         >
           {copiedHook ? <Check className="h-4 w-4 text-green-600 animate-pulse" /> : <Copy className="h-4 w-4" />}
         </button>
@@ -138,7 +141,7 @@ Generated via ViralSpy`;
 
       {/* 3 Video Angles */}
       <div className="space-y-3">
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">[3 VIDEO ANGLES]</span>
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">[{t('angles')}]</span>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {brief.angles.map((angle, index) => (
             <div key={index} className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col justify-between shadow-card hover:shadow-md transition-all duration-200">
@@ -149,11 +152,11 @@ Generated via ViralSpy`;
                 <h4 className="text-sm font-bold text-[#1A1A1A] tracking-tight mb-2 uppercase">
                   {angle.title}
                 </h4>
-                <p className="text-xs text-gray-600 leading-relaxed font-sans">
+                <p className="text-xs text-gray-650 leading-relaxed font-sans">
                   {angle.description}
                 </p>
               </div>
-              <div className="border-t border-gray-100 mt-4 pt-3 text-[9px] font-bold text-gray-400 tracking-wider uppercase">
+              <div className="border-t border-gray-100 mt-4 pt-3 text-[9px] font-bold text-gray-405 tracking-wider uppercase">
                 ANGLE STRATEGY 0{index + 1}
               </div>
             </div>
@@ -167,9 +170,9 @@ Generated via ViralSpy`;
           <Video className="h-6 w-6" />
         </div>
         <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Recommended Format</div>
+          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('format')}</div>
           <div className="text-sm font-bold text-[#1A1A1A] font-mono uppercase mt-0.5">{brief.format}</div>
-          <p className="text-xs text-gray-600 leading-relaxed mt-1">{getFormatExplanation(brief.format)}</p>
+          <p className="text-xs text-gray-650 leading-relaxed mt-1">{getFormatExplanation(brief.format)}</p>
         </div>
       </div>
 
@@ -182,7 +185,7 @@ Generated via ViralSpy`;
             <Clock className="h-5 w-5" />
           </div>
           <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Best Post Time</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('postTime')}</div>
             <div className="text-sm font-bold text-[#1A1A1A] mt-0.5">{brief.best_post_time}</div>
           </div>
         </div>
@@ -193,7 +196,7 @@ Generated via ViralSpy`;
             <Eye className="h-5 w-5" />
           </div>
           <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estimated Reach</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('estimatedReach')}</div>
             <div className="text-sm font-bold text-[#1A1A1A] mt-0.5">{brief.estimated_reach}</div>
           </div>
         </div>
@@ -202,7 +205,7 @@ Generated via ViralSpy`;
 
       {/* Hashtags section */}
       <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3 shadow-card">
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">[DISTRIBUTION TAGS]</span>
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">[{t('hashtags')}]</span>
         <div className="flex flex-wrap gap-2">
           {brief.hashtags.map((tag, idx) => {
             const isCopied = copiedTagIdx === idx;
@@ -227,7 +230,7 @@ Generated via ViralSpy`;
 
       {/* Script outline timeline */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6 shadow-card">
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">[SCRIPT TIMELINE OUTLINE]</span>
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">[{t('scriptOutline')}]</span>
         
         <div className="relative pl-6 border-l border-orange-100 space-y-6 py-2">
           
@@ -238,7 +241,7 @@ Generated via ViralSpy`;
               <h5 className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider">Act 1: Scroll Stopper</h5>
               <span className="text-[11px] font-mono text-[#FF6B4A] font-bold">0s - 3s</span>
             </div>
-            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+            <p className="text-xs text-gray-655 mt-1 leading-relaxed">
               Open directly with the scroll-stopping hook: <span className="italic text-gray-800 font-semibold">&ldquo;{brief.hook}&rdquo;</span>. Maintain eye contact, use bold styling overlay.
             </p>
           </div>
@@ -250,7 +253,7 @@ Generated via ViralSpy`;
               <h5 className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider">Act 2: Value Build</h5>
               <span className="text-[11px] font-mono text-[#FF6B4A] font-bold">3s - 20s</span>
             </div>
-            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+            <p className="text-xs text-gray-655 mt-1 leading-relaxed">
               Pivot to visual angle structures. Present the core value vector, showing overlays or POV screens while detailing the setup, hack, or comparison.
             </p>
           </div>
@@ -262,7 +265,7 @@ Generated via ViralSpy`;
               <h5 className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider">Act 3: Payoff & Call-To-Action</h5>
               <span className="text-[11px] font-mono text-[#FF6B4A] font-bold">20s - 30s</span>
             </div>
-            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+            <p className="text-xs text-gray-655 mt-1 leading-relaxed">
               Deliver the ultimate payoff resolution. Conclude with a strong, prompt call to action to save this video and follow for more trend blueprints.
             </p>
           </div>

@@ -1,0 +1,97 @@
+{
+  "nav": {
+    "dashboard": "డాష్బోర్డ్",
+    "briefs": "నా బ్రీఫ్లు",
+    "settings": "సెట్టింగులు",
+    "logout": "లాగ్అవుట్"
+  },
+  "dashboard": {
+    "title": "ట్రెండ్ ఇంటెలిజెన్స్",
+    "subtitle": "ట్రెండ్లను 48 గంటల ముందే పట్టుకోండి",
+    "trendsToday": "ఈరోజు ట్రెండ్లు",
+    "explodingNow": "ఇప్పుడు పేలుతున్నవి",
+    "avgVelocity": "సగటు వేగం",
+    "briefsGenerated": "బ్రీఫ్లు తయారయ్యాయి",
+    "lastUpdated": "చివరి అప్డేట్",
+    "refreshData": "లైవ్ డేటా రిఫ్రెష్ చేయండి",
+    "reseed": "డేటా రీసెట్ చేయండి",
+    "liveIndicator": "లైవ్",
+    "filterAll": "అన్నీ",
+    "filterFitness": "ఫిట్నెస్",
+    "filterFood": "ఆహారం",
+    "filterFinance": "ఫైనాన్స్",
+    "filterFashion": "ఫ్యాషన్",
+    "filterBeauty": "అందం",
+    "filterTech": "టెక్",
+    "filterGaming": "గేమింగ్",
+    "filterTravel": "ప్రయాణం",
+    "filterLifestyle": "జీవనశైలి",
+    "filterEducation": "విద్య"
+  },
+  "trendCard": {
+    "velocityScore": "వేగం స్కోర్",
+    "detectedAt": "కనుగొన్నారు",
+    "generateBrief": "బ్రీఫ్ తయారుచేయండి",
+    "confidence": "నమ్మకం",
+    "exploding": "పేలుతున్నది",
+    "rising": "పెరుగుతున్నది",
+    "peaked": "గరిష్టం చేరింది"
+  },
+  "brief": {
+    "back": "← ట్రెండ్లకు తిరిగి",
+    "hook": "మీ హుక్",
+    "copyHook": "హుక్ కాపీ చేయండి",
+    "copied": "కాపీ అయింది!",
+    "angles": "వీడియో యాంగిల్స్",
+    "format": "సిఫార్సు చేసిన ఫార్మాట్",
+    "hashtags": "టాప్ హ్యాష్ట్యాగ్లు",
+    "postTime": "పోస్ట్ చేయడానికి సరైన సమయం",
+    "estimatedReach": "అంచనా చేరుకునే సంఖ్య",
+    "scriptOutline": "స్క్రిప్ట్ అవుట్లైన్",
+    "generating": "మీ బ్రీఫ్ తయారవుతోంది...",
+    "loadingMessages": [
+      "⚡ ట్రెండ్ సిగ్నల్స్ వెతుకుతున్నాం...",
+      "🧠 వేగం నమూనాలు విశ్లేషిస్తున్నాం...",
+      "✍️ మీ హుక్ రాస్తున్నాం...",
+      "🎯 కంటెంట్ యాంగిల్స్ తయారుచేస్తున్నాం..."
+    ]
+  },
+  "onboarding": {
+    "title": "మీరు ఏ కంటెంట్ తయారుచేస్తారు?",
+    "subtitle": "మీ ఫీడ్ వ్యక్తిగతీకరించడానికి 3 నిచెలు ఎంచుకోండి",
+    "next": "తదుపరి",
+    "back": "వెనుకకు",
+    "finish": "ప్రారంభించండి",
+    "step1": "మీ నిచెలు",
+    "step2": "మీ ప్లాట్ఫారమ్లు",
+    "step3": "మీ ప్రేక్షకులు"
+  },
+  "settings": {
+    "title": "సెట్టింగులు",
+    "language": "భాష",
+    "aiProvider": "AI ప్రొవైడర్",
+    "aiProviderDesc": "బ్రీఫ్లు ఎలా తయారుచేయాలి",
+    "byokTitle": "మీ స్వంత కీ తీసుకురండి",
+    "byokDesc": "మీ స్వంత API కీ వాడండి. మేము దాన్ని నిల్వ చేయం.",
+    "byokPlaceholder": "మీ API కీని ఇక్కడ పేస్ట్ చేయండి",
+    "byokSave": "కీ సేవ్ చేయండి",
+    "byokSaved": "కీ లోకల్గా సేవ్ అయింది",
+    "ollamaTitle": "లోకల్ AI (Ollama)",
+    "ollamaDesc": "మీ మెషీన్లో AI నడపండి. API ఖర్చు లేదు.",
+    "ollamaUrl": "Ollama URL",
+    "ollamaModel": "మోడల్",
+    "ollamaTest": "కనెక్షన్ టెస్ట్ చేయండి",
+    "ollamaConnected": "కనెక్ట్ అయింది",
+    "ollamaDisconnected": "కనెక్ట్ కాలేదు",
+    "providerGemini": "Gemini (క్లౌడ్)",
+    "providerOpenAI": "OpenAI (క్లౌడ్)",
+    "providerOllama": "Ollama (లోకల్)",
+    "providerBYOK": "మీ కీ తీసుకురండి"
+  },
+  "errors": {
+    "briefFailed": "బ్రీఫ్ తయారుచేయలేకపోయాం. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+    "trendNotFound": "ట్రెండ్ కనుగొనలేదు.",
+    "apiKeyMissing": "API కీ కాన్ఫिగర్ చేయలేదు.",
+    "ollamaNotRunning": "Ollama నడవడం లేదు. ప్రారంభించండి: ollama serve"
+  }
+}

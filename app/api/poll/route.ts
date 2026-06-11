@@ -9,37 +9,6 @@ const supabase = createClient(
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-// ─── Reddit OAuth (app-only token) ───────────────────────
-let _redditToken: string | null = null;
-let _redditTokenExpiry = 0;
-
-async function getRedditToken(): Promise<string | null> {
-  const clientId = process.env.REDDIT_CLIENT_ID;
-  const clientSecret = process.env.REDDIT_CLIENT_SECRET;
-  if (!clientId || !clientSecret || clientId === 'your_reddit_client_id') return null;
-
-  if (_redditToken && Date.now() < _redditTokenExpiry) return _redditToken;
-
-  try {
-    const creds = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    const res = await fetch('https://www.reddit.com/api/v1/access_token', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${creds}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'ViralSpy:v1.0 (by /u/viralspy_app)'
-      },
-      body: 'grant_type=client_credentials'
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    _redditToken = json.access_token || null;
-    _redditTokenExpiry = Date.now() + (json.expires_in || 3600) * 1000 - 60000;
-    return _redditToken;
-  } catch {
-    return null;
-  }
-}
 
 // Helper: map YouTube category ID / title keywords to niche
 function mapYouTubeCategoryToNiche(categoryId: string, title: string): string {
@@ -102,7 +71,6 @@ async function runAnomalyDetector(trendId: string, currentVelocity: number, curr
 export async function GET() {
   const results = {
     youtube: 0,
-    reddit: 0,
     instagram: 0,
     errors: [] as string[]
   };
@@ -168,93 +136,6 @@ export async function GET() {
     results.errors.push(`YouTube: ${e.message}`);
   }
 
-  // ─── SOURCE 2: Reddit Rising (OAuth app-only) ────────────
-  const subreddits = [
-    { sub: 'fitness', niche: 'fitness' },
-    { sub: 'food', niche: 'food' },
-    { sub: 'personalfinance', niche: 'finance' },
-    { sub: 'femalefashionadvice', niche: 'fashion' },
-    { sub: 'SkincareAddiction', niche: 'beauty' },
-    { sub: 'technology', niche: 'tech' },
-    { sub: 'gaming', niche: 'gaming' },
-    { sub: 'travel', niche: 'travel' },
-    { sub: 'selfimprovement', niche: 'lifestyle' },
-    { sub: 'learnprogramming', niche: 'education' }
-  ];
-
-  const redditToken = await getRedditToken();
-
-  if (!redditToken) {
-    results.errors.push('Reddit skipped: REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not configured. Create an app at https://www.reddit.com/prefs/apps');
-  } else {
-    for (const { sub, niche } of subreddits) {
-      try {
-        const res = await fetch(
-          `https://oauth.reddit.com/r/${sub}/rising?limit=5&raw_json=1`,
-          {
-            headers: {
-              'Authorization': `Bearer ${redditToken}`,
-              'User-Agent': 'ViralSpy:v1.0 (by /u/viralspy_app)',
-              'Accept': 'application/json',
-            },
-            cache: 'no-store'
-          }
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const text = await res.text();
-        if (text.startsWith('<')) throw new Error('Reddit returned HTML');
-        const data = JSON.parse(text);
-        const posts = data?.data?.children || [];
-
-        for (const post of posts) {
-          const { title, score, num_comments, ups } = post.data;
-          const postsPerHour = Math.floor((score + num_comments) / 2);
-          const avg = Math.max(5, Math.floor(postsPerHour * 0.35));
-          const { score: vScore, status } = computeVelocityScore(postsPerHour, avg);
-
-          const { data: upserted, error } = await supabase
-            .from('trends')
-            .upsert({
-              name: (title as string).slice(0, 100),
-              niche,
-              platform: 'REDDIT',
-              post_count: ups,
-              posts_per_hour: postsPerHour,
-              avg_posts_24h: avg,
-              velocity_score: vScore,
-              peak_velocity: vScore,
-              momentum_status: status,
-              confidence_score: Math.min(0.90, vScore / 500),
-              detected_at: new Date().toISOString(),
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }, { onConflict: 'name,platform', ignoreDuplicates: false })
-            .select()
-            .single();
-
-          if (error) {
-            results.errors.push(`Reddit/${sub} upsert: ${error.message} | code: ${error.code} | details: ${error.details}`);
-            continue;
-          }
-
-          if (upserted) {
-            await supabase.from('trend_snapshots').insert({
-              trend_id: upserted.id,
-              post_count: ups,
-              posts_per_hour: postsPerHour,
-              velocity_score: vScore,
-              snapped_at: new Date().toISOString()
-            });
-            await runAnomalyDetector(upserted.id, vScore, status, Math.min(0.90, vScore / 500));
-          }
-
-          results.reddit++;
-        }
-      } catch (e: any) {
-        results.errors.push(`Reddit/${sub}: ${e.message}`);
-      }
-    }
-  }
 
   // ─── SOURCE 3: Instagram via RapidAPI ────────────────────
   const niches = [
@@ -329,6 +210,10 @@ export async function GET() {
   return Response.json({
     success: true,
     polled_at: new Date().toISOString(),
-    results
+    results: {
+      youtube: results.youtube,
+      instagram: results.instagram,
+      errors: results.errors
+    }
   });
 }

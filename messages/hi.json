@@ -1,0 +1,97 @@
+{
+  "nav": {
+    "dashboard": "डैशबोर्ड",
+    "briefs": "मेरे ब्रीफ",
+    "settings": "सेटिंग्स",
+    "logout": "लॉगआउट"
+  },
+  "dashboard": {
+    "title": "ट्रेंड इंटेलिजेंस",
+    "subtitle": "ट्रेंड्स को 48 घंटे पहले पकड़ें",
+    "trendsToday": "आज के ट्रेंड्स",
+    "explodingNow": "अभी एक्सप्लोडिंग",
+    "avgVelocity": "औसत वेलोसिटी",
+    "briefsGenerated": "ब्रीफ बने",
+    "lastUpdated": "अंतिम अपडेट",
+    "refreshData": "लाइव डेटा रिफ्रेश करें",
+    "reseed": "डेटा रीसेट करें",
+    "liveIndicator": "लाइव",
+    "filterAll": "सभी",
+    "filterFitness": "फिटनेस",
+    "filterFood": "खाना",
+    "filterFinance": "फाइनेंस",
+    "filterFashion": "फैशन",
+    "filterBeauty": "ब्यूटी",
+    "filterTech": "टेक",
+    "filterGaming": "गेमिंग",
+    "filterTravel": "ट्रैवल",
+    "filterLifestyle": "लाइफस्टाइल",
+    "filterEducation": "शिक्षा"
+  },
+  "trendCard": {
+    "velocityScore": "वेलोसिटी स्कोर",
+    "detectedAt": "पता चला",
+    "generateBrief": "ब्रीफ बनाएं",
+    "confidence": "विश्वास",
+    "exploding": "एक्सप्लोडिंग",
+    "rising": "राइजिंग",
+    "peaked": "पीक्ड"
+  },
+  "brief": {
+    "back": "← ट्रेंड्स पर वापस",
+    "hook": "आपका हुक",
+    "copyHook": "हुक कॉपी करें",
+    "copied": "कॉपी हो गया!",
+    "angles": "वीडियो एंगल्स",
+    "format": "सुझाया गया फॉर्मेट",
+    "hashtags": "टॉप हैशटैग्स",
+    "postTime": "पोस्ट करने का सही समय",
+    "estimatedReach": "अनुमानित रीच",
+    "scriptOutline": "स्क्रिप्ट आउटलाइन",
+    "generating": "आपका ब्रीफ बन रहा है...",
+    "loadingMessages": [
+      "⚡ ट्रेंड सिग्नल्स ढूंढ रहे हैं...",
+      "🧠 वेलोसिटी पैटर्न्स एनालाइज हो रहे हैं...",
+      "✍️ आपका हुक लिखा जा रहा है...",
+      "🎯 कंटेंट एंगल्स बन रहे हैं..."
+    ]
+  },
+  "onboarding": {
+    "title": "आप किस तरह का कंटेंट बनाते हैं?",
+    "subtitle": "अपनी फीड पर्सनलाइज करने के लिए 3 निचेज चुनें",
+    "next": "आगे",
+    "back": "पीछे",
+    "finish": "शुरू करें",
+    "step1": "आपकी निचेज",
+    "step2": "आपके प्लेटफॉर्म्स",
+    "step3": "आपकी ऑडियंस"
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "language": "भाषा",
+    "aiProvider": "AI प्रोवाइडर",
+    "aiProviderDesc": "ब्रीफ कैसे बनाए जाएं",
+    "byokTitle": "अपनी API की लाएं",
+    "byokDesc": "अपनी API key इस्तेमाल करें। हम इसे कभी स्टोर नहीं करते।",
+    "byokPlaceholder": "अपनी API key यहाँ पेस्ट करें",
+    "byokSave": "की सेव करें",
+    "byokSaved": "की लोकल सेव हो गई",
+    "ollamaTitle": "लोकल AI (Ollama)",
+    "ollamaDesc": "अपनी मशीन पर AI चलाएं। कोई API खर्च नहीं।",
+    "ollamaUrl": "Ollama URL",
+    "ollamaModel": "मॉडल",
+    "ollamaTest": "कनेक्शन टेस्ट करें",
+    "ollamaConnected": "कनेक्टेड",
+    "ollamaDisconnected": "कनेक्ट नहीं है",
+    "providerGemini": "Gemini (क्लाउड)",
+    "providerOpenAI": "OpenAI (क्लाउड)",
+    "providerOllama": "Ollama (लोकल)",
+    "providerBYOK": "अपनी Key लाएं"
+  },
+  "errors": {
+    "briefFailed": "ब्रीफ नहीं बन सका। कृपया दोबारा कोशिश करें।",
+    "trendNotFound": "ट्रेंड नहीं मिला।",
+    "apiKeyMissing": "API key कॉन्फ़िगर नहीं है।",
+    "ollamaNotRunning": "Ollama नहीं चल रहा। इसे शुरू करें: ollama serve"
+  }
+}

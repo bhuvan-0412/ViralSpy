@@ -2,24 +2,24 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '../../../components/AuthProvider';
-import { Brief, Trend } from '../../../types';
-import BriefCard from '../../../components/BriefCard';
-import Logo from '../../../components/Logo';
+import { useLocale, useTranslations } from 'next-intl';
+import { useAuth } from '../../../../components/AuthProvider';
+import { Brief, Trend } from '../../../../types';
+import BriefCard from '../../../../components/BriefCard';
+import Logo from '../../../../components/Logo';
 import { Eye } from 'lucide-react';
-
-const MESSAGES = [
-  "⚡ Detecting trend signals...", 
-  "🧠 Analysing velocity patterns...", 
-  "✍️ Writing your hook...", 
-  "🎯 Building content angles..."
-];
+import { useAIProvider } from '../../../../hooks/useAIProvider';
 
 export default function BriefPage() {
   const router = useRouter();
+  const locale = useLocale();
   const { id } = useParams();
   const { user, loading } = useAuth();
+  const { getHeaders } = useAIProvider();
   
+  const t = useTranslations('brief');
+  const tErrors = useTranslations('errors');
+
   const [brief, setBrief] = useState<Brief | null>(null);
   const [trend, setTrend] = useState<Trend | null>(null);
   const [fetching, setFetching] = useState(true);
@@ -29,6 +29,15 @@ export default function BriefPage() {
   // Loading Screen States
   const [progress, setProgress] = useState(0);
   const [messageIndex, setMessageIndex] = useState(0);
+
+  // Load dynamic translated loading messages
+  const rawMessages = t.raw('loadingMessages');
+  const loadingMessages = Array.isArray(rawMessages) ? rawMessages : [
+    "⚡ Detecting trend signals...",
+    "🧠 Analysing velocity patterns...",
+    "✍️ Writing your hook...",
+    "🎯 Building content angles..."
+  ];
 
   const loadBriefData = async (forceLoad = false) => {
     if (!id) return;
@@ -50,7 +59,7 @@ export default function BriefPage() {
           setTrend(trendResult.data);
         }
       } else {
-        setError(result.error || 'Content brief not found.');
+        setError(result.error || tErrors('trendNotFound'));
       }
     } catch (err) {
       console.error('Failed to load content brief:', err);
@@ -100,11 +109,11 @@ export default function BriefPage() {
     
     setMessageIndex(0);
     const interval = setInterval(() => {
-      setMessageIndex((prev) => (prev + 1) % MESSAGES.length);
+      setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
     }, 2000);
     
     return () => clearInterval(interval);
-  }, [fetching]);
+  }, [fetching, loadingMessages.length]);
 
   const handleRegenerate = async () => {
     if (!brief || !trend) return;
@@ -115,7 +124,9 @@ export default function BriefPage() {
       const res = await fetch('/api/brief', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getHeaders(),
+          'x-locale': locale
         },
         body: JSON.stringify({
           trendId: trend.id,
@@ -126,9 +137,10 @@ export default function BriefPage() {
       const data = await res.json();
       if (data.success && data.data) {
         setBrief(data.data);
-        router.replace(`/brief/${data.data.id}`);
+        const localizedPath = locale === 'en' ? `/brief/${data.data.id}` : `/${locale}/brief/${data.data.id}`;
+        router.replace(localizedPath);
       } else {
-        alert(data.error || 'Brief regeneration failed.');
+        alert(data.error || tErrors('briefFailed'));
       }
     } catch (err) {
       console.error('Regeneration error:', err);
@@ -139,6 +151,7 @@ export default function BriefPage() {
   };
 
   const isShowLoadingScreen = fetching || (loading && !user);
+  const localizedDashboardPath = locale === 'en' ? '/dashboard' : `/${locale}/dashboard`;
 
   return (
     <div className="min-h-screen bg-[#F7F5F2] text-[#1A1A1A] flex flex-col justify-between font-sans relative overflow-hidden">
@@ -163,7 +176,7 @@ export default function BriefPage() {
           <div className="text-center space-y-1">
             {/* Cycling Status Messages */}
             <p className="text-sm font-semibold text-[#1A1A1A] transition-all duration-300">
-              {MESSAGES[messageIndex]}
+              {loadingMessages[messageIndex]}
             </p>
             {/* Small Muted Text */}
             <p className="text-xs text-gray-400 font-medium">
@@ -189,13 +202,13 @@ export default function BriefPage() {
                 {error || 'The requested content strategy brief could not be located.'}
               </div>
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push(localizedDashboardPath)}
                 className="px-5 py-2.5 bg-[#FF6B4A] hover:bg-[#ff5a33] text-white rounded-full text-xs font-semibold uppercase tracking-wider transition-all hover:scale-[1.02]"
               >
                 Return to Signal Feed
               </button>
             </main>
-            <footer className="max-w-xl mx-auto w-full py-4 border-t border-gray-200 text-center text-[10px] text-gray-500 font-mono uppercase">
+            <footer className="max-w-xl mx-auto w-full py-4 border-t border-gray-200 text-center text-[10px] text-gray-550 font-mono uppercase">
               viralspy
             </footer>
           </div>
@@ -206,11 +219,11 @@ export default function BriefPage() {
                 brief={brief}
                 trend={trend}
                 onRegenerate={handleRegenerate}
-                onBack={() => router.push('/dashboard')}
+                onBack={() => router.push(localizedDashboardPath)}
                 isRegenerating={regenerating}
               />
             </main>
-            <footer className="max-w-[720px] mx-auto w-full py-6 px-4 sm:px-0 border-t border-gray-200 flex justify-between items-center text-xs text-gray-500 mt-12">
+            <footer className="max-w-[720px] mx-auto w-full py-6 px-4 sm:px-0 border-t border-gray-200 flex justify-between items-center text-xs text-gray-550 mt-12">
               <div>© 2026 ViralSpy.</div>
               <div className="text-[#FF6B4A] italic">Quietly Rise</div>
             </footer>

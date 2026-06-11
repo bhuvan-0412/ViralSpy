@@ -86,6 +86,7 @@ export interface UserProfile {
   platforms: string[];
   subscriber_count?: number | null;
   onboarded: boolean;
+  ai_provider?: string | null;
   created_at: string;
   updated_at: string;
 }

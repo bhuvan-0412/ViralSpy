@@ -1,24 +1,27 @@
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 interface NicheFilterProps {
   selectedNiche: string;
   onChange: (niche: string) => void;
 }
 
-const NICHES = [
-  { value: 'all', label: 'All Niches' },
-  { value: 'fitness', label: 'Fitness' },
-  { value: 'food', label: 'Food' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'fashion', label: 'Fashion' },
-  { value: 'beauty', label: 'Beauty' },
-  { value: 'tech', label: 'Tech' },
-  { value: 'gaming', label: 'Gaming' },
-  { value: 'travel', label: 'Travel' },
-  { value: 'education', label: 'Education' }
-];
-
 export default function NicheFilter({ selectedNiche, onChange }: NicheFilterProps) {
+  const t = useTranslations('dashboard');
+
+  const NICHES = [
+    { value: 'all', label: t('filterAll') },
+    { value: 'fitness', label: t('filterFitness') },
+    { value: 'food', label: t('filterFood') },
+    { value: 'finance', label: t('filterFinance') },
+    { value: 'fashion', label: t('filterFashion') },
+    { value: 'beauty', label: t('filterBeauty') },
+    { value: 'tech', label: t('filterTech') },
+    { value: 'gaming', label: t('filterGaming') },
+    { value: 'travel', label: t('filterTravel') },
+    { value: 'education', label: t('filterEducation') }
+  ];
+
   return (
     <div className="flex space-x-2 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
       {NICHES.map((niche) => {
@@ -30,7 +33,7 @@ export default function NicheFilter({ selectedNiche, onChange }: NicheFilterProp
             className={`px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 ease-in-out whitespace-nowrap ${
               isActive
                 ? 'bg-[#FF6B4A] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:border-[#FF6B4A] hover:text-[#FF6B4A]'
+                : 'bg-white text-gray-655 border border-gray-200 hover:border-[#FF6B4A] hover:text-[#FF6B4A]'
             }`}
           >
             {niche.label}

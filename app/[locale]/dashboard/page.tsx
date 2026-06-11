@@ -2,16 +2,24 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../components/AuthProvider';
-import { supabase, signOutUser, getUserProfile, isDemoModeActive } from '../../lib/supabase';
-import { UserProfile, Trend } from '../../types';
-import TrendFeed from '../../components/TrendFeed';
-import Sparkline from '../../components/Sparkline';
-import Logo from '../../components/Logo';
-import { LogOut, Eye, TrendingUp, Flame, Activity, FileText, RefreshCw, CheckCircle } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useAuth } from '../../../components/AuthProvider';
+import { supabase, signOutUser, getUserProfile, isDemoModeActive } from '../../../lib/supabase';
+import { UserProfile, Trend } from '../../../types';
+import TrendFeed from '../../../components/TrendFeed';
+import Sparkline from '../../../components/Sparkline';
+import Logo from '../../../components/Logo';
+import LanguageSwitcher from '../../../components/LanguageSwitcher';
+import AIProviderBadge from '../../../components/AIProviderBadge';
+import { formatIndianNumber, formatIST } from '../../../lib/format';
+import { LogOut, Eye, TrendingUp, Flame, Activity, FileText, RefreshCw, CheckCircle, Settings } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard');
+  const tNav = useTranslations('nav');
+  
   const { user, loading, refreshUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [trends, setTrends] = useState<Trend[]>([]);
@@ -38,6 +46,20 @@ export default function DashboardPage() {
     try {
       const p = await getUserProfile();
       setProfile(p);
+      
+      // Override localStorage configuration if profile has a synced ai_provider
+      if (p && p.ai_provider) {
+        try {
+          const stored = localStorage.getItem('viralspy_ai_config');
+          const currentConfig = stored ? JSON.parse(stored) : {};
+          if (currentConfig.provider !== p.ai_provider) {
+            currentConfig.provider = p.ai_provider;
+            localStorage.setItem('viralspy_ai_config', JSON.stringify(currentConfig));
+          }
+        } catch (e) {
+          console.error('LocalStorage sync failed:', e);
+        }
+      }
       
       const res = await fetch('/api/trends');
       const data = await res.json();
@@ -173,6 +195,10 @@ export default function DashboardPage() {
     router.push('/');
   };
 
+  const getLocalizedPath = (path: string) => {
+    return locale === 'en' ? path : `/${locale}${path}`;
+  };
+
   if (loading || !user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#F7F5F2] text-[#6B7280] space-y-3">
@@ -196,20 +222,26 @@ export default function DashboardPage() {
 
           {/* Nav Links Center */}
           <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold text-gray-650">
-            <a href="#" className="text-[#FF6B4A] hover:text-[#FF6B4A] transition-colors">Trends Intel</a>
-            <a href="#" className="hover:text-[#FF6B4A] transition-colors">Saved Briefs</a>
-            <a href="#" className="hover:text-[#FF6B4A] transition-colors">Settings</a>
+            <a href="#" className="text-[#FF6B4A] hover:text-[#FF6B4A] transition-colors">{t('title')}</a>
+            <button onClick={() => router.push(getLocalizedPath('/settings'))} className="hover:text-[#FF6B4A] transition-colors">{tNav('settings')}</button>
           </nav>
 
-          {/* Avatar / SignOut Right */}
+          {/* Avatar / Switcher / Settings / SignOut Right */}
           <div className="flex items-center space-x-3">
             {/* Last updated timestamp */}
             {lastPolledLabel && (
               <span className="hidden lg:flex items-center space-x-1.5 text-[10px] font-semibold text-gray-400 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-                <span>Last updated: {lastPolledLabel}</span>
+                <span>{t('lastUpdated')}: {lastPolledLabel}</span>
               </span>
             )}
+            
+            {/* Language Switcher component */}
+            <LanguageSwitcher />
+
+            {/* AI Provider Badge component */}
+            <AIProviderBadge />
+
             <div className="flex items-center space-x-2.5">
               <span className="text-xs text-gray-500 font-semibold hidden md:inline">
                 {profile?.display_name || 'Demo Creator'}
@@ -218,10 +250,21 @@ export default function DashboardPage() {
                 {(profile?.display_name || 'Demo Creator').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
               </div>
             </div>
+
+            {/* Settings button */}
+            <button
+              onClick={() => router.push(getLocalizedPath('/settings'))}
+              className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-500 hover:text-gray-900 transition-colors"
+              title={tNav('settings')}
+            >
+              <Settings className="h-4 w-4" />
+            </button>
+
+            {/* Sign out button */}
             <button
               onClick={handleSignOut}
               className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-500 hover:text-gray-900 transition-colors"
-              title="Sign Out"
+              title={tNav('logout')}
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -245,8 +288,6 @@ export default function DashboardPage() {
           </div>
         )}
         
-
-
         {/* Hero Stat Bar (4 metric cards in a row) */}
         {(() => {
           const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -263,11 +304,11 @@ export default function DashboardPage() {
               {/* Card 1: Trends Detected */}
               <div className="bg-white p-5 border border-gray-200 rounded-2xl shadow-card flex flex-col justify-between h-32 relative overflow-hidden transition-all duration-200 hover:shadow-md">
                 <div className="flex justify-between items-start">
-                  <span className="text-xs font-semibold text-gray-500">Trends Detected Today</span>
+                  <span className="text-xs font-semibold text-gray-500">{t('trendsToday')}</span>
                   <TrendingUp className="h-5 w-5 text-[#FF6B4A]" />
                 </div>
                 <div className="mt-2">
-                  <span className="text-3xl font-black text-[#1A1A1A] tracking-tight">{trendsDetectedToday}</span>
+                  <span className="text-3xl font-black text-[#1A1A1A] tracking-tight">{formatIndianNumber(trendsDetectedToday)}</span>
                 </div>
                 <div className="h-8 w-full mt-2">
                   <Sparkline data={[12, 14, 16, trendsDetectedToday]} stroke="#FF6B4A" />
@@ -277,11 +318,11 @@ export default function DashboardPage() {
               {/* Card 2: EXPLODING Right Now */}
               <div className="bg-white p-5 border border-gray-200 rounded-2xl shadow-card flex flex-col justify-between h-32 relative overflow-hidden transition-all duration-200 hover:shadow-md">
                 <div className="flex justify-between items-start">
-                  <span className="text-xs font-semibold text-gray-500">EXPLODING Right Now</span>
+                  <span className="text-xs font-semibold text-gray-500">{t('explodingNow')}</span>
                   <Flame className="h-5 w-5 text-red-500 animate-pulse" />
                 </div>
                 <div className="mt-2">
-                  <span className="text-3xl font-black text-red-500 tracking-tight">{explodingRightNow}</span>
+                  <span className="text-3xl font-black text-red-500 tracking-tight">{formatIndianNumber(explodingRightNow)}</span>
                 </div>
                 <div className="h-8 w-full mt-2">
                   <Sparkline data={[1, 2, 2, explodingRightNow]} stroke="#ef4444" />
@@ -291,11 +332,11 @@ export default function DashboardPage() {
               {/* Card 3: Avg Velocity Score */}
               <div className="bg-white p-5 border border-gray-200 rounded-2xl shadow-card flex flex-col justify-between h-32 relative overflow-hidden transition-all duration-200 hover:shadow-md">
                 <div className="flex justify-between items-start">
-                  <span className="text-xs font-semibold text-gray-500">Avg Velocity Score</span>
+                  <span className="text-xs font-semibold text-gray-500">{t('avgVelocity')}</span>
                   <Activity className="h-5 w-5 text-[#7F77DD]" />
                 </div>
                 <div className="mt-2">
-                  <span className="text-3xl font-black text-[#7F77DD] tracking-tight">{avgVelocity}%</span>
+                  <span className="text-3xl font-black text-[#7F77DD] tracking-tight">{formatIndianNumber(avgVelocity)}%</span>
                 </div>
                 <div className="h-8 w-full mt-2">
                   <Sparkline data={[180, 210, 230, avgVelocity]} stroke="#7F77DD" />
@@ -305,11 +346,11 @@ export default function DashboardPage() {
               {/* Card 4: Briefs Generated */}
               <div className="bg-white p-5 border border-gray-200 rounded-2xl shadow-card flex flex-col justify-between h-32 relative overflow-hidden transition-all duration-200 hover:shadow-md">
                 <div className="flex justify-between items-start">
-                  <span className="text-xs font-semibold text-gray-500">Briefs Generated</span>
+                  <span className="text-xs font-semibold text-gray-500">{t('briefsGenerated')}</span>
                   <FileText className="h-5 w-5 text-[#1D9E75]" />
                 </div>
                 <div className="mt-2">
-                  <span className="text-3xl font-black text-[#1D9E75] tracking-tight">{briefsCount}</span>
+                  <span className="text-3xl font-black text-[#1D9E75] tracking-tight">{formatIndianNumber(briefsCount)}</span>
                 </div>
                 <div className="h-8 w-full mt-2">
                   <Sparkline data={[8, 10, 11, briefsCount]} stroke="#1D9E75" />
@@ -325,9 +366,9 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-0.5">
               <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">Signal Feed</h2>
-              <p className="text-xs text-gray-500 font-medium">Breakout vectors calculated in real-time from ingest nodes.</p>
+              <p className="text-xs text-gray-500 font-medium">{t('subtitle')}</p>
             </div>
-            {/* Refresh Live Data button — sits alongside Reseed intel inside TrendFeed */}
+            {/* Refresh Live Data button */}
             <button
               id="refresh-live-data-btn"
               onClick={handlePollLiveData}
@@ -335,7 +376,7 @@ export default function DashboardPage() {
               className="flex items-center space-x-1.5 px-3 py-2 bg-[#FF6B4A] hover:bg-[#ff5a33] text-white text-xs font-semibold rounded-xl transition-all disabled:opacity-60 disabled:pointer-events-none shrink-0"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isPollLoading ? 'animate-spin' : ''}`} />
-              <span>{isPollLoading ? 'Polling...' : '🔄 Refresh Live Data'}</span>
+              <span>{isPollLoading ? 'Polling...' : `🔄 ${t('refreshData')}`}</span>
             </button>
           </div>
 
@@ -369,11 +410,10 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full max-w-7xl mx-auto py-6 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500 px-4 sm:px-6 mt-12">
+      <footer className="w-full max-w-7xl mx-auto py-6 border-t border-gray-200 flex items-center justify-between text-xs text-gray-550 px-4 sm:px-6 mt-12">
         <div>© 2026 ViralSpy.</div>
         <div className="text-[#FF6B4A] italic">Quietly Rise</div>
       </footer>
     </div>
   );
 }
-

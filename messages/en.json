@@ -1,0 +1,97 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "briefs": "My Briefs",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "title": "Trend Intelligence",
+    "subtitle": "Catch trends 48 hours before they peak",
+    "trendsToday": "Trends Today",
+    "explodingNow": "Exploding Now",
+    "avgVelocity": "Avg Velocity",
+    "briefsGenerated": "Briefs Generated",
+    "lastUpdated": "Last updated",
+    "refreshData": "Refresh Live Data",
+    "reseed": "Reseed Intel",
+    "liveIndicator": "Live",
+    "filterAll": "All",
+    "filterFitness": "Fitness",
+    "filterFood": "Food",
+    "filterFinance": "Finance",
+    "filterFashion": "Fashion",
+    "filterBeauty": "Beauty",
+    "filterTech": "Tech",
+    "filterGaming": "Gaming",
+    "filterTravel": "Travel",
+    "filterLifestyle": "Lifestyle",
+    "filterEducation": "Education"
+  },
+  "trendCard": {
+    "velocityScore": "Velocity Score",
+    "detectedAt": "Detected",
+    "generateBrief": "Generate Brief",
+    "confidence": "Confidence",
+    "exploding": "Exploding",
+    "rising": "Rising",
+    "peaked": "Peaked"
+  },
+  "brief": {
+    "back": "← Back to trends",
+    "hook": "Your Hook",
+    "copyHook": "Copy Hook",
+    "copied": "Copied!",
+    "angles": "Video Angles",
+    "format": "Recommended Format",
+    "hashtags": "Top Hashtags",
+    "postTime": "Best Post Time",
+    "estimatedReach": "Estimated Reach",
+    "scriptOutline": "Script Outline",
+    "generating": "Generating your brief...",
+    "loadingMessages": [
+      "⚡ Detecting trend signals...",
+      "🧠 Analysing velocity patterns...",
+      "✍️ Writing your hook...",
+      "🎯 Building content angles..."
+    ]
+  },
+  "onboarding": {
+    "title": "What content do you create?",
+    "subtitle": "Pick up to 3 niches to personalise your feed",
+    "next": "Next",
+    "back": "Back",
+    "finish": "Let's Go",
+    "step1": "Your Niches",
+    "step2": "Your Platforms",
+    "step3": "Your Audience"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "aiProvider": "AI Provider",
+    "aiProviderDesc": "Choose how briefs are generated",
+    "byokTitle": "Bring Your Own Key",
+    "byokDesc": "Use your own API key. We never store it on our servers.",
+    "byokPlaceholder": "Paste your API key here",
+    "byokSave": "Save Key",
+    "byokSaved": "Key saved locally",
+    "ollamaTitle": "Local AI (Ollama)",
+    "ollamaDesc": "Run AI locally on your machine. No API costs.",
+    "ollamaUrl": "Ollama URL",
+    "ollamaModel": "Model",
+    "ollamaTest": "Test Connection",
+    "ollamaConnected": "Connected",
+    "ollamaDisconnected": "Not connected",
+    "providerGemini": "Gemini (Cloud)",
+    "providerOpenAI": "OpenAI (Cloud)",
+    "providerOllama": "Ollama (Local)",
+    "providerBYOK": "Bring Your Own Key"
+  },
+  "errors": {
+    "briefFailed": "Could not generate brief. Please try again.",
+    "trendNotFound": "Trend not found.",
+    "apiKeyMissing": "API key not configured.",
+    "ollamaNotRunning": "Ollama is not running. Start it with: ollama serve"
+  }
+}

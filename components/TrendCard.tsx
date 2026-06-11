@@ -4,10 +4,12 @@ import React, { useEffect, useState } from 'react';
 import { Trend } from '../types';
 import MomentumBadge from './MomentumBadge';
 import Sparkline from './Sparkline';
+import { useTranslations } from 'next-intl';
+import { formatIndianNumber, formatIST } from '../lib/format';
 
 interface TrendCardProps {
   trend: Trend;
-  onGenerateBrief: (trendId: string) => void;
+  onGenerateBrief: (trendId: string, trendName: string, niche: string, platform: string, velocityScore: number, momentumStatus: string) => void;
   isGenerating?: boolean;
 }
 
@@ -59,20 +61,8 @@ const PlatformIcon = ({ platform }: { platform: string }) => {
   }
 };
 
-function formatTimeAgo(dateStr: string) {
-  if (!dateStr) return 'recently';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const hours = Math.floor(diff / 3600000);
-  if (hours <= 0) {
-    const mins = Math.floor(diff / 60000);
-    if (mins <= 0) return 'just now';
-    return `${mins}m ago`;
-  }
-  if (hours === 1) return '1 hour ago';
-  return `${hours} hours ago`;
-}
-
 export default function TrendCard({ trend, onGenerateBrief, isGenerating = false }: TrendCardProps) {
+  const t = useTranslations('trendCard');
   const isExploding = trend.momentum_status === 'EXPLODING';
   
   // Count-up hook
@@ -102,7 +92,7 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating = false
 
   const containerClasses = `bg-white border rounded-2xl p-5 hover:border-gray-300 transition-all flex flex-col justify-between h-full shadow-card ${
     isExploding 
-      ? 'border-l-4 border-l-[#FF6B4A] border-gray-250 ring-2 ring-red-400/40 ring-offset-2 animate-pulse' 
+      ? 'border-l-4 border-l-[#FF6B4A] border-gray-250' 
       : 'border-gray-200'
   }`;
 
@@ -131,7 +121,7 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating = false
               {trend.niche}
             </span>
             <span className="text-[10px] font-semibold text-gray-400">
-              {Math.round(trend.confidence_score * 100)}% confidence
+              {Math.round(trend.confidence_score * 100)}% {t('confidence')}
             </span>
           </div>
         </div>
@@ -141,13 +131,13 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating = false
       <div className="my-5 grid grid-cols-2 gap-4 items-center border-t border-b border-gray-100 py-4">
         <div>
           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-            Velocity Score
+            {t('velocityScore')}
           </div>
           <div className="text-3xl font-black text-[#1A1A1A] mt-0.5">
-            {displayScore}%
+            {formatIndianNumber(displayScore)}%
           </div>
-          <div className="text-[11px] text-gray-500 mt-0.5 font-medium">
-            {(trend.post_count / 1000).toFixed(1)}K posts total
+          <div className="text-[11px] text-gray-550 mt-0.5 font-medium">
+            {formatIndianNumber(trend.post_count)} posts total
           </div>
         </div>
 
@@ -159,16 +149,16 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating = false
       {/* Footer Actions */}
       <div className="flex items-center justify-between pt-2">
         <span className="text-xs font-semibold text-gray-450">
-          Detected {formatTimeAgo(trend.detected_at)}
+          {t('detectedAt')} {formatIST(trend.detected_at)}
         </span>
         <button
-          onClick={() => onGenerateBrief(trend.id)}
+          onClick={() => onGenerateBrief(trend.id, trend.name, trend.niche, trend.platform, trend.velocity_score, trend.momentum_status)}
           disabled={isGenerating}
           className={`bg-[#FF6B4A] text-white font-semibold text-xs tracking-wider rounded-full px-4.5 py-2 hover:scale-[1.02] transition-all disabled:opacity-85 disabled:pointer-events-none ${
             isGenerating ? 'animate-shimmer' : ''
           }`}
         >
-          {isGenerating ? 'Strategizing...' : 'Generate Brief →'}
+          {isGenerating ? 'Strategizing...' : `${t('generateBrief')} →`}
         </button>
       </div>
 

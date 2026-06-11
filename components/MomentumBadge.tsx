@@ -17,6 +17,9 @@ export default function MomentumBadge({ status }: MomentumBadgeProps) {
 
   return (
     <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border animate-badge-pop ${styleClass}`}>
+      {status === 'EXPLODING' && (
+        <span className="w-2 h-2 rounded-full bg-red-500 inline-block mr-1" />
+      )}
       {status}
     </span>
   );

@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { Trend } from '../types';
 import TrendCard from './TrendCard';
 import NicheFilter from './NicheFilter';
 import LoadingSkeleton from './LoadingSkeleton';
 import { supabase, isDemoModeActive, getCurrentUser } from '../lib/supabase';
+import { useAIProvider } from '../hooks/useAIProvider';
 import { RefreshCw } from 'lucide-react';
 
 interface TrendFeedProps {
@@ -19,12 +21,22 @@ interface TrendFeedProps {
 
 export default function TrendFeed({ trends, setTrends, onBriefGenerated, onPollLiveData, isPollLoading = false }: TrendFeedProps) {
   const router = useRouter();
+  const locale = useLocale();
+  const { getHeaders } = useAIProvider();
+  
   const [selectedNiche, setSelectedNiche] = useState<string>('all');
   const [generatingTrendId, setGeneratingTrendId] = useState<string | null>(null);
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleGenerateBrief = async (trendId: string) => {
+  const handleGenerateBrief = async (
+    trendId: string,
+    trendName: string,
+    niche: string,
+    platform: string,
+    velocityScore: number,
+    momentumStatus: string
+  ) => {
     setGeneratingTrendId(trendId);
     
     // Trigger the skeleton loader to render after a 1-second delay so that the card's button shimmer is visible first
@@ -40,9 +52,19 @@ export default function TrendFeed({ trends, setTrends, onBriefGenerated, onPollL
       const res = await fetch('/api/brief', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getHeaders(),
+          'x-locale': locale
         },
-        body: JSON.stringify({ trendId, userId: user?.id || 'demo-user-1234' })
+        body: JSON.stringify({
+          trendId,
+          userId: user?.id || 'demo-user-1234',
+          trendName,
+          niche,
+          platform,
+          velocityScore,
+          momentumStatus
+        })
       });
       const data = await res.json();
       if (data.success && data.data) {
@@ -76,7 +98,8 @@ export default function TrendFeed({ trends, setTrends, onBriefGenerated, onPollL
       setGeneratingTrendId(null);
       setShowSkeleton(false);
       if (briefId) {
-        router.push(`/brief/${briefId}`);
+        const localizedPath = locale === 'en' ? `/brief/${briefId}` : `/${locale}/brief/${briefId}`;
+        router.push(localizedPath);
       } else {
         alert('Could not generate AI strategy brief. Ensure database and API connections are valid.');
       }
@@ -127,7 +150,7 @@ export default function TrendFeed({ trends, setTrends, onBriefGenerated, onPollL
         <button
           onClick={handleReseed}
           disabled={loading}
-          className="flex items-center space-x-1.5 px-3 py-2 bg-white border border-gray-200 hover:border-[#FF6B4A] text-xs font-semibold text-gray-650 hover:text-[#FF6B4A] rounded-xl transition-all"
+          className="flex items-center space-x-1.5 px-3 py-2 bg-white border border-gray-200 hover:border-[#FF6B4A] text-gray-655 hover:text-[#FF6B4A] rounded-xl transition-all"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Reseed intel</span>
