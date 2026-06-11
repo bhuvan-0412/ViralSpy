@@ -5,9 +5,10 @@ import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
 interface SparklineProps {
   data: number[];
+  stroke?: string;
 }
 
-export default function Sparkline({ data }: SparklineProps) {
+export default function Sparkline({ data, stroke = '#FF6B4A' }: SparklineProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -15,7 +16,7 @@ export default function Sparkline({ data }: SparklineProps) {
   }, []);
 
   if (!mounted || !data || data.length === 0) {
-    return <div className="h-full w-full bg-gray-900/20" />;
+    return <div className="h-full w-full bg-gray-150/20" />;
   }
 
   const chartData = data.map((val, i) => ({ value: val, index: i }));
@@ -27,10 +28,12 @@ export default function Sparkline({ data }: SparklineProps) {
           <Line
             type="monotone"
             dataKey="value"
-            stroke="#7F77DD"
+            stroke={stroke}
             strokeWidth={2}
             dot={false}
-            isAnimationActive={false}
+            isAnimationActive={true}
+            animationDuration={1500}
+            animationEasing="ease-out"
           />
         </LineChart>
       </ResponsiveContainer>

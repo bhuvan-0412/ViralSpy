@@ -7,16 +7,16 @@ interface MomentumBadgeProps {
 
 export default function MomentumBadge({ status }: MomentumBadgeProps) {
   const styles = {
-    EXPLODING: 'bg-red-500/20 text-red-400 border border-red-500/30',
-    RISING: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
-    PEAKED: 'bg-gray-500/20 text-gray-400 border border-gray-500/30',
-    DEAD: 'bg-gray-900 text-gray-600 border border-gray-800'
+    EXPLODING: 'bg-red-50 text-red-500 border border-red-200',
+    RISING: 'bg-amber-50 text-amber-600 border border-amber-200',
+    PEAKED: 'bg-gray-100 text-gray-500 border border-gray-200',
+    DEAD: 'bg-gray-100 text-gray-400 border border-gray-200'
   };
 
   const styleClass = styles[status] || styles.PEAKED;
 
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${styleClass}`}>
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border animate-badge-pop ${styleClass}`}>
       {status}
     </span>
   );

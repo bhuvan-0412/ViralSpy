@@ -80,84 +80,80 @@ Generated via ViralSpy`;
     <div className="space-y-6">
       
       {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+      <div className="flex items-center justify-between border-b border-gray-250 pb-4">
         <button
           onClick={onBack}
-          className="flex items-center space-x-2 text-xs font-mono font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors"
+          className="text-sm font-semibold text-gray-500 hover:text-[#FF6B4A] transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Back to trends</span>
+          ← Back to trends
         </button>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <button
             onClick={onRegenerate}
             disabled={isRegenerating}
-            className="flex items-center space-x-1 px-3 py-1.5 bg-gray-900 border border-gray-800 hover:border-gray-750 text-gray-300 hover:text-white rounded-lg text-xs font-mono font-bold uppercase tracking-wider transition-all disabled:opacity-30 disabled:pointer-events-none"
+            className="flex items-center space-x-1.5 px-4 py-2 bg-white border border-gray-200 hover:border-[#FF6B4A] text-gray-705 hover:text-[#FF6B4A] rounded-full text-xs font-semibold transition-all hover:scale-[1.02]"
           >
             <RotateCw className={`h-3.5 w-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
             <span>{isRegenerating ? 'Generating...' : 'Regenerate'}</span>
           </button>
           <button
             onClick={shareSummary}
-            className="flex items-center space-x-1 px-3 py-1.5 bg-purple-650 hover:bg-purple-600 text-white rounded-lg text-xs font-mono font-bold uppercase tracking-wider transition-all"
+            className="flex items-center space-x-1.5 px-4 py-2 bg-[#FF6B4A] hover:bg-[#ff5a33] text-white rounded-full text-xs font-semibold transition-all hover:scale-[1.02]"
           >
             {copiedSummary ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
-            <span>{copiedSummary ? 'Copied Brief!' : 'Share'}</span>
+            <span>{copiedSummary ? 'Copied Brief!' : 'Share Dossier'}</span>
           </button>
         </div>
       </div>
 
       {/* Trend Context Bar */}
-      <div className="bg-gray-900 border border-gray-850 rounded-xl p-4 flex flex-wrap justify-between items-center gap-4">
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-wrap justify-between items-center gap-4 shadow-card">
         <div>
-          <span className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest">Active Predictor Dossier</span>
-          <h2 className="text-xl font-bold text-white tracking-tight">{trend.name}</h2>
+          <span className="text-[10px] font-bold text-[#FF6B4A] uppercase tracking-wider block mb-1">Active Predictor Dossier</span>
+          <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight">{trend.name}</h2>
         </div>
-        <div className="flex items-center space-x-4 border-l border-gray-800 pl-4">
+        <div className="flex items-center space-x-4 sm:border-l sm:border-gray-150 sm:pl-4">
           <div className="text-right">
-            <div className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">Velocity</div>
-            <div className="text-base font-black text-white font-mono">{trend.velocity_score}%</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Velocity</div>
+            <div className="text-lg font-black text-[#1A1A1A]">{trend.velocity_score}%</div>
           </div>
           <MomentumBadge status={trend.momentum_status} />
         </div>
       </div>
 
       {/* Hook Segment */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 bg-purple-600/10 text-purple-400 border-b border-l border-purple-900/30 px-3 py-1 rounded-bl-lg text-[9px] font-mono font-black uppercase tracking-wider">
-          Your Opening Line
-        </div>
-        <span className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest block mb-2">[HOOK FORMULA]</span>
-        <blockquote className="text-xl sm:text-2xl font-semibold text-white italic pr-12 leading-relaxed">
+      <div className="bg-white border border-gray-200 border-l-4 border-l-[#FF6B4A] rounded-2xl p-6 relative overflow-hidden shadow-card">
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-3">[HOOK FORMULA]</span>
+        <blockquote className="text-xl sm:text-2xl font-semibold text-[#1A1A1A] italic pr-12 leading-relaxed">
           &ldquo;{brief.hook}&rdquo;
         </blockquote>
         <button
           onClick={() => copyToClipboard(brief.hook, 'hook')}
-          className="absolute bottom-6 right-6 p-2 rounded-lg bg-gray-850 hover:bg-gray-800 border border-gray-800 hover:border-purple-900/40 text-gray-400 hover:text-purple-400 transition-all"
+          className="absolute top-6 right-6 p-2.5 rounded-full bg-gray-50 hover:bg-orange-50 border border-gray-200 text-gray-500 hover:text-[#FF6B4A] transition-all"
           title="Copy Hook"
         >
-          {copiedHook ? <Check className="h-4 w-4 text-green-500 animate-pulse" /> : <Copy className="h-4 w-4" />}
+          {copiedHook ? <Check className="h-4 w-4 text-green-600 animate-pulse" /> : <Copy className="h-4 w-4" />}
         </button>
       </div>
 
       {/* 3 Video Angles */}
       <div className="space-y-3">
-        <span className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest block">[3 VIDEO ANGLES]</span>
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">[3 VIDEO ANGLES]</span>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {brief.angles.map((angle, index) => (
-            <div key={index} className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col justify-between">
+            <div key={index} className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col justify-between shadow-card hover:shadow-md transition-all duration-200">
               <div>
-                <span className="text-[28px] font-black text-[#7F77DD]/20 font-mono block mb-1">
-                  0{index + 1}
-                </span>
-                <h4 className="text-sm font-bold text-white tracking-tight mb-2 uppercase">
+                <div className="h-9 w-9 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center text-sm font-bold text-[#FF6B4A] mb-3">
+                  {index + 1}
+                </div>
+                <h4 className="text-sm font-bold text-[#1A1A1A] tracking-tight mb-2 uppercase">
                   {angle.title}
                 </h4>
-                <p className="text-xs text-gray-400 leading-relaxed font-sans">
+                <p className="text-xs text-gray-600 leading-relaxed font-sans">
                   {angle.description}
                 </p>
               </div>
-              <div className="border-t border-gray-850 mt-4 pt-3 text-[8px] font-mono text-gray-500 tracking-wider uppercase">
+              <div className="border-t border-gray-100 mt-4 pt-3 text-[9px] font-bold text-gray-400 tracking-wider uppercase">
                 ANGLE STRATEGY 0{index + 1}
               </div>
             </div>
@@ -165,56 +161,48 @@ Generated via ViralSpy`;
         </div>
       </div>
 
-      {/* Grid Specs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        
-        {/* Format Card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
-          <div className="flex items-center space-x-2 text-purple-450 border-b border-gray-850 pb-2">
-            <Video className="h-4 w-4 text-purple-400" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-300">Format Guide</span>
-          </div>
-          <div className="text-sm font-bold text-white font-mono uppercase">
-            {brief.format}
-          </div>
-          <p className="text-[11px] text-gray-400 leading-relaxed font-sans">
-            {getFormatExplanation(brief.format)}
-          </p>
+      {/* Recommended Format Card */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 flex items-center space-x-4 shadow-card">
+        <div className="p-3.5 bg-orange-50 border border-orange-100 rounded-2xl text-[#FF6B4A]">
+          <Video className="h-6 w-6" />
         </div>
+        <div>
+          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Recommended Format</div>
+          <div className="text-sm font-bold text-[#1A1A1A] font-mono uppercase mt-0.5">{brief.format}</div>
+          <p className="text-xs text-gray-600 leading-relaxed mt-1">{getFormatExplanation(brief.format)}</p>
+        </div>
+      </div>
 
+      {/* Post Timing & Estimated Reach Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
         {/* Post Timing Card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
-          <div className="flex items-center space-x-2 text-purple-450 border-b border-gray-850 pb-2">
-            <Clock className="h-4 w-4 text-purple-400" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-300">Best Post Time</span>
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex items-center space-x-3.5 shadow-card">
+          <div className="p-2.5 bg-orange-50 border border-orange-100 rounded-2xl text-[#FF6B4A]">
+            <Clock className="h-5 w-5" />
           </div>
-          <div className="text-sm font-bold text-white font-mono">
-            {brief.best_post_time}
+          <div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Best Post Time</div>
+            <div className="text-sm font-bold text-[#1A1A1A] mt-0.5">{brief.best_post_time}</div>
           </div>
-          <p className="text-[11px] text-gray-400 leading-relaxed font-sans">
-            Post during these high-volume windows to maximize index categorization.
-          </p>
         </div>
 
         {/* Reach Range Card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
-          <div className="flex items-center space-x-2 text-purple-450 border-b border-gray-850 pb-2">
-            <Eye className="h-4 w-4 text-purple-400" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-300">Estimated Reach</span>
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex items-center space-x-3.5 shadow-card">
+          <div className="p-2.5 bg-orange-50 border border-orange-100 rounded-2xl text-[#FF6B4A]">
+            <Eye className="h-5 w-5" />
           </div>
-          <div className="text-sm font-bold text-white font-mono">
-            {brief.estimated_reach}
+          <div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estimated Reach</div>
+            <div className="text-sm font-bold text-[#1A1A1A] mt-0.5">{brief.estimated_reach}</div>
           </div>
-          <p className="text-[11px] text-gray-400 leading-relaxed font-sans">
-            Estimated organic views based on current niche breakout velocity.
-          </p>
         </div>
 
       </div>
 
       {/* Hashtags section */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
-        <span className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest block">[DISTRIBUTION TAGS]</span>
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3 shadow-card">
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">[DISTRIBUTION TAGS]</span>
         <div className="flex flex-wrap gap-2">
           {brief.hashtags.map((tag, idx) => {
             const isCopied = copiedTagIdx === idx;
@@ -222,15 +210,15 @@ Generated via ViralSpy`;
               <button
                 key={idx}
                 onClick={() => copyToClipboard(tag, 'tag', idx)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 border rounded-lg text-xs font-mono font-semibold transition-all ${
+                className={`flex items-center space-x-1.5 px-3 py-1.5 border rounded-full text-xs font-semibold transition-all ${
                   isCopied
-                    ? 'bg-green-950/20 border-green-500/50 text-green-400'
-                    : 'bg-gray-850 hover:bg-gray-800 border-gray-800 text-gray-300 hover:text-white'
+                    ? 'bg-green-50 border-green-200 text-green-600'
+                    : 'bg-orange-50 hover:bg-orange-100 border-orange-100 text-[#FF6B4A]'
                 }`}
               >
-                <Hash className="h-3 w-3 text-purple-400" />
+                <Hash className="h-3 w-3 text-[#FF6B4A]" />
                 <span>{tag.replace(/^#/, '')}</span>
-                {isCopied && <Check className="h-3 w-3 ml-1 text-green-400" />}
+                {isCopied && <Check className="h-3 w-3 ml-1 text-green-600" />}
               </button>
             );
           })}
@@ -238,43 +226,43 @@ Generated via ViralSpy`;
       </div>
 
       {/* Script outline timeline */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-6">
-        <span className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest block">[SCRIPT TIMELINE OUTLINE]</span>
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6 shadow-card">
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">[SCRIPT TIMELINE OUTLINE]</span>
         
-        <div className="relative pl-6 border-l border-gray-800 space-y-6 py-2">
+        <div className="relative pl-6 border-l border-orange-100 space-y-6 py-2">
           
           {/* Act 1 */}
           <div className="relative">
-            <span className="absolute -left-[30px] top-1.5 bg-[#7F77DD] h-2 w-2 rounded-full border border-gray-950" />
+            <span className="absolute -left-[30px] top-1.5 bg-[#FF6B4A] h-3 w-3 rounded-full border-2 border-white ring-2 ring-orange-100" />
             <div className="flex justify-between items-baseline gap-4">
-              <h5 className="text-xs font-bold text-white font-mono uppercase tracking-wider">Act 1: Scroll Stopper</h5>
-              <span className="text-[10px] font-mono text-purple-400">0s - 3s</span>
+              <h5 className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider">Act 1: Scroll Stopper</h5>
+              <span className="text-[11px] font-mono text-[#FF6B4A] font-bold">0s - 3s</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-              Open directly with the scroll-stopping hook: <span className="italic text-gray-300 font-medium">&ldquo;{brief.hook}&rdquo;</span>. Maintain eye contact, use bold styling overlay.
+            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+              Open directly with the scroll-stopping hook: <span className="italic text-gray-800 font-semibold">&ldquo;{brief.hook}&rdquo;</span>. Maintain eye contact, use bold styling overlay.
             </p>
           </div>
 
           {/* Act 2 */}
           <div className="relative">
-            <span className="absolute -left-[30px] top-1.5 bg-[#7F77DD] h-2 w-2 rounded-full border border-gray-950" />
+            <span className="absolute -left-[30px] top-1.5 bg-[#FF6B4A] h-3 w-3 rounded-full border-2 border-white ring-2 ring-orange-100" />
             <div className="flex justify-between items-baseline gap-4">
-              <h5 className="text-xs font-bold text-white font-mono uppercase tracking-wider">Act 2: Value Build</h5>
-              <span className="text-[10px] font-mono text-purple-400">3s - 20s</span>
+              <h5 className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider">Act 2: Value Build</h5>
+              <span className="text-[11px] font-mono text-[#FF6B4A] font-bold">3s - 20s</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
               Pivot to visual angle structures. Present the core value vector, showing overlays or POV screens while detailing the setup, hack, or comparison.
             </p>
           </div>
 
           {/* Act 3 */}
           <div className="relative">
-            <span className="absolute -left-[30px] top-1.5 bg-[#7F77DD] h-2 w-2 rounded-full border border-gray-950" />
+            <span className="absolute -left-[30px] top-1.5 bg-[#FF6B4A] h-3 w-3 rounded-full border-2 border-white ring-2 ring-orange-100" />
             <div className="flex justify-between items-baseline gap-4">
-              <h5 className="text-xs font-bold text-white font-mono uppercase tracking-wider">Act 3: Payoff & Call-To-Action</h5>
-              <span className="text-[10px] font-mono text-purple-400">20s - 30s</span>
+              <h5 className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider">Act 3: Payoff & Call-To-Action</h5>
+              <span className="text-[11px] font-mono text-[#FF6B4A] font-bold">20s - 30s</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
               Deliver the ultimate payoff resolution. Conclude with a strong, prompt call to action to save this video and follow for more trend blueprints.
             </p>
           </div>

@@ -5,7 +5,15 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../components/AuthProvider';
 import { Brief, Trend } from '../../../types';
 import BriefCard from '../../../components/BriefCard';
+import Logo from '../../../components/Logo';
 import { Eye } from 'lucide-react';
+
+const MESSAGES = [
+  "⚡ Detecting trend signals...", 
+  "🧠 Analysing velocity patterns...", 
+  "✍️ Writing your hook...", 
+  "🎯 Building content angles..."
+];
 
 export default function BriefPage() {
   const router = useRouter();
@@ -17,6 +25,10 @@ export default function BriefPage() {
   const [fetching, setFetching] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState('');
+
+  // Loading Screen States
+  const [progress, setProgress] = useState(0);
+  const [messageIndex, setMessageIndex] = useState(0);
 
   const loadBriefData = async (forceLoad = false) => {
     if (!id) return;
@@ -56,6 +68,44 @@ export default function BriefPage() {
     }
   }, [user, loading, id, router]);
 
+  // Progress Bar Animation (0% to 90% over 8 seconds, 100% when loaded)
+  useEffect(() => {
+    if (!fetching) {
+      setProgress(100);
+      return;
+    }
+    
+    setProgress(0);
+    const intervalTime = 100; // Update every 100ms
+    const totalDuration = 8000; // 8 seconds
+    const steps = totalDuration / intervalTime;
+    const increment = 90 / steps;
+
+    const timer = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(timer);
+          return 90;
+        }
+        return Math.min(prev + increment, 90);
+      });
+    }, intervalTime);
+
+    return () => clearInterval(timer);
+  }, [fetching]);
+
+  // Cycling Status Messages every 2000ms
+  useEffect(() => {
+    if (!fetching) return;
+    
+    setMessageIndex(0);
+    const interval = setInterval(() => {
+      setMessageIndex((prev) => (prev + 1) % MESSAGES.length);
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, [fetching]);
+
   const handleRegenerate = async () => {
     if (!brief || !trend) return;
     setRegenerating(true);
@@ -76,7 +126,6 @@ export default function BriefPage() {
       const data = await res.json();
       if (data.success && data.data) {
         setBrief(data.data);
-        // Refresh router/view
         router.replace(`/brief/${data.data.id}`);
       } else {
         alert(data.error || 'Brief regeneration failed.');
@@ -89,54 +138,86 @@ export default function BriefPage() {
     }
   };
 
-  if (loading || fetching) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-gray-500 space-y-3">
-        <Eye className="h-8 w-8 text-[#7F77DD] animate-pulse" />
-        <div className="text-xs font-mono tracking-widest uppercase animate-pulse">Decrypting Brief...</div>
-      </div>
-    );
-  }
-
-  if (error || !brief || !trend) {
-    return (
-      <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col justify-between p-6">
-        <header className="max-w-xl mx-auto w-full py-4 border-b border-gray-900 text-xs font-mono font-bold text-gray-400">
-          VIRALSPY // ERROR
-        </header>
-        <main className="max-w-md mx-auto text-center space-y-6 py-12">
-          <div className="p-4 bg-red-950/20 border border-red-500/30 text-red-400 text-xs font-mono rounded-xl uppercase">
-            {error || 'The requested content strategy brief could not be located.'}
-          </div>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 bg-gray-900 border border-gray-800 text-gray-300 hover:text-white rounded-lg text-xs font-mono font-bold uppercase tracking-wider transition-all"
-          >
-            Return to Signal Feed
-          </button>
-        </main>
-        <footer className="max-w-xl mx-auto w-full py-4 border-t border-gray-900 text-center text-[10px] text-gray-600 font-mono uppercase">
-          viralspy
-        </footer>
-      </div>
-    );
-  }
+  const isShowLoadingScreen = fetching || (loading && !user);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col justify-between p-4 sm:p-6">
-      <main className="flex-grow max-w-[680px] mx-auto w-full py-6">
-        <BriefCard
-          brief={brief}
-          trend={trend}
-          onRegenerate={handleRegenerate}
-          onBack={() => router.push('/dashboard')}
-          isRegenerating={regenerating}
-        />
-      </main>
-      <footer className="max-w-[680px] mx-auto w-full py-6 border-t border-gray-900 flex justify-between items-center text-[10px] font-mono text-gray-500 uppercase tracking-widest mt-12">
-        <div>© 2026 ViralSpy.</div>
-        <div className="text-purple-500 italic">Quietly Rise</div>
-      </footer>
+    <div className="min-h-screen bg-[#F7F5F2] text-[#1A1A1A] flex flex-col justify-between font-sans relative overflow-hidden">
+      
+      {/* Dynamic Centered Full-Page Loading Screen with 300ms Cross-fade */}
+      <div 
+        className={`fixed inset-0 bg-[#F7F5F2] z-50 flex flex-col items-center justify-center transition-opacity duration-300 ${
+          isShowLoadingScreen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="flex flex-col items-center justify-center space-y-6 max-w-sm w-full px-6">
+          <Logo />
+          
+          {/* Animated Progress Bar */}
+          <div className="w-64 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              className="bg-[#FF6B4A] h-full animate-pulse transition-all duration-100 ease-out" 
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          <div className="text-center space-y-1">
+            {/* Cycling Status Messages */}
+            <p className="text-sm font-semibold text-[#1A1A1A] transition-all duration-300">
+              {MESSAGES[messageIndex]}
+            </p>
+            {/* Small Muted Text */}
+            <p className="text-xs text-gray-400 font-medium">
+              Usually takes 5-8 seconds
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Layout with 300ms cross-fade */}
+      <div 
+        className={`flex-grow flex flex-col justify-between w-full transition-opacity duration-300 ${
+          !isShowLoadingScreen ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        {error || !brief || !trend ? (
+          <div className="flex-grow flex flex-col justify-between p-4 sm:p-6">
+            <header className="max-w-xl mx-auto w-full py-4 border-b border-gray-200 text-xs font-bold text-gray-400">
+              VIRALSPY // ERROR
+            </header>
+            <main className="max-w-md mx-auto text-center space-y-6 py-12">
+              <div className="p-4 bg-red-50 border border-red-200 text-red-655 text-xs font-semibold rounded-2xl">
+                {error || 'The requested content strategy brief could not be located.'}
+              </div>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="px-5 py-2.5 bg-[#FF6B4A] hover:bg-[#ff5a33] text-white rounded-full text-xs font-semibold uppercase tracking-wider transition-all hover:scale-[1.02]"
+              >
+                Return to Signal Feed
+              </button>
+            </main>
+            <footer className="max-w-xl mx-auto w-full py-4 border-t border-gray-200 text-center text-[10px] text-gray-500 font-mono uppercase">
+              viralspy
+            </footer>
+          </div>
+        ) : (
+          <>
+            <main className="flex-grow max-w-[720px] mx-auto w-full py-6 px-4 sm:px-0">
+              <BriefCard
+                brief={brief}
+                trend={trend}
+                onRegenerate={handleRegenerate}
+                onBack={() => router.push('/dashboard')}
+                isRegenerating={regenerating}
+              />
+            </main>
+            <footer className="max-w-[720px] mx-auto w-full py-6 px-4 sm:px-0 border-t border-gray-200 flex justify-between items-center text-xs text-gray-500 mt-12">
+              <div>© 2026 ViralSpy.</div>
+              <div className="text-[#FF6B4A] italic">Quietly Rise</div>
+            </footer>
+          </>
+        )}
+      </div>
+
     </div>
   );
 }

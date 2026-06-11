@@ -37,7 +37,7 @@ function matchNicheByKeyword(title: string, tags: string[]): string {
 // 1. YouTube Shorts Poller
 async function pollYouTubeShorts(apiKey: string, supabaseClient: any) {
   try {
-    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&videoCategoryId=10&maxResults=20&key=${apiKey}`;
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&maxResults=50&key=${apiKey}`;
     const res = await fetch(url);
     const data = await res.json();
     if (!data.items || data.items.length === 0) return null;
@@ -159,7 +159,11 @@ async function pollRedditRising() {
 
     const url = `https://www.reddit.com/r/${sub}/rising.json?limit=10`;
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'ViralSpy/1.0' }
+      headers: { 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9'
+      }
     });
     const result = await res.json();
     if (!result.data || !result.data.children || result.data.children.length === 0) return null;
@@ -313,6 +317,54 @@ export async function POST(request: Request) {
 
         if (snapError) {
           console.error('Failed to insert snapshot:', snapError.message);
+        }
+
+        // --- Agent 2: Anomaly Detector (Inline) ---
+        let confidenceScore = Number(upserted.confidence_score || 0.80);
+        let finalMomentum = upserted.momentum_status;
+
+        try {
+          const { data: snapshots } = await supabase
+            .from('trend_snapshots')
+            .select('velocity_score')
+            .eq('trend_id', upserted.id)
+            .order('snapped_at', { ascending: false })
+            .limit(14);
+
+          if (snapshots && snapshots.length >= 3) {
+            const scores = snapshots.map(s => Number(s.velocity_score));
+            const mean = scores.reduce((sum, val) => sum + val, 0) / scores.length;
+            const variance = scores.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / scores.length;
+            const stdDev = Math.sqrt(variance);
+
+            const zScore = stdDev > 0 ? (Number(upserted.velocity_score) - mean) / stdDev : 0;
+
+            if (zScore > 2.5) {
+              confidenceScore = parseFloat(Math.min(0.99, confidenceScore + 0.15).toFixed(2));
+              if (finalMomentum === 'RISING') {
+                finalMomentum = 'EXPLODING';
+              }
+            } else if (zScore < 0) {
+              confidenceScore = parseFloat(Math.max(0.50, confidenceScore - 0.05).toFixed(2));
+            }
+
+            // Update the trend table with the new stats
+            const { data: updatedTrend } = await supabase
+              .from('trends')
+              .update({
+                confidence_score: confidenceScore,
+                momentum_status: finalMomentum
+              })
+              .eq('id', upserted.id)
+              .select()
+              .single();
+
+            if (updatedTrend) {
+              Object.assign(upserted, updatedTrend);
+            }
+          }
+        } catch (anomalyErr) {
+          console.error('Anomaly detection failed:', anomalyErr);
         }
 
         // Call database RPC compute_velocity_score(trend_id)

@@ -6,7 +6,7 @@ interface NicheFilterProps {
 }
 
 const NICHES = [
-  { value: 'all', label: 'All' },
+  { value: 'all', label: 'All Niches' },
   { value: 'fitness', label: 'Fitness' },
   { value: 'food', label: 'Food' },
   { value: 'finance', label: 'Finance' },
@@ -20,17 +20,17 @@ const NICHES = [
 
 export default function NicheFilter({ selectedNiche, onChange }: NicheFilterProps) {
   return (
-    <div className="flex space-x-2 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+    <div className="flex space-x-2 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
       {NICHES.map((niche) => {
         const isActive = selectedNiche === niche.value;
         return (
           <button
             key={niche.value}
             onClick={() => onChange(niche.value)}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+            className={`px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 ease-in-out whitespace-nowrap ${
               isActive
-                ? 'bg-[#7F77DD] text-white shadow-[0_0_15px_rgba(127,119,221,0.3)]'
-                : 'bg-gray-900 text-gray-400 border border-gray-850 hover:text-white hover:border-gray-700'
+                ? 'bg-[#FF6B4A] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:border-[#FF6B4A] hover:text-[#FF6B4A]'
             }`}
           >
             {niche.label}

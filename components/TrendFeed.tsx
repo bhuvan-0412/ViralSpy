@@ -7,92 +7,29 @@ import TrendCard from './TrendCard';
 import NicheFilter from './NicheFilter';
 import LoadingSkeleton from './LoadingSkeleton';
 import { supabase, isDemoModeActive, getCurrentUser } from '../lib/supabase';
-import { RefreshCw, Play } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 interface TrendFeedProps {
-  initialTrends: Trend[];
+  trends: Trend[];
+  setTrends: React.Dispatch<React.SetStateAction<Trend[]>>;
+  onBriefGenerated?: () => void;
 }
 
-export default function TrendFeed({ initialTrends }: TrendFeedProps) {
+export default function TrendFeed({ trends, setTrends, onBriefGenerated }: TrendFeedProps) {
   const router = useRouter();
-  const [trends, setTrends] = useState<Trend[]>(initialTrends);
   const [selectedNiche, setSelectedNiche] = useState<string>('all');
   const [generatingTrendId, setGeneratingTrendId] = useState<string | null>(null);
+  const [showSkeleton, setShowSkeleton] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // Sync state if initial trends changes
-  useEffect(() => {
-    setTrends(initialTrends);
-  }, [initialTrends]);
-
-  // Realtime Database Subscriptions
-  useEffect(() => {
-    if (!supabase || isDemoModeActive()) return;
-
-    const channel = supabase
-      .channel('public:trends')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'trends'
-        },
-        (payload) => {
-          if (payload.eventType === 'UPDATE') {
-            setTrends((current) =>
-              current.map((t) => (t.id === payload.new.id ? { ...t, ...payload.new } : t))
-            );
-          } else if (payload.eventType === 'INSERT') {
-            setTrends((current) => [...current, payload.new as Trend]);
-          } else if (payload.eventType === 'DELETE') {
-            setTrends((current) => current.filter((t) => t.id !== payload.old.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  // Demo Mode Realtime simulation
-  useEffect(() => {
-    if (!isDemoModeActive()) return;
-
-    // Simulate "5-4-3-2-1 grounding method" ticking up in real-time
-    const interval = setInterval(() => {
-      setTrends((current) =>
-        current.map((t) => {
-          if (t.name === '5-4-3-2-1 grounding method') {
-            // Tick up score by 0.5 to 2.5
-            const tick = parseFloat((Math.random() * 2 + 0.5).toFixed(2));
-            const newScore = parseFloat((t.velocity_score + tick).toFixed(2));
-            
-            // Recalculate status
-            let newStatus = t.momentum_status;
-            if (newScore >= 300) newStatus = 'EXPLODING';
-            else if (newScore >= 150) newStatus = 'RISING';
-            else if (newScore >= 50) newStatus = 'PEAKED';
-            else newStatus = 'DEAD';
-
-            return {
-              ...t,
-              velocity_score: newScore,
-              momentum_status: newStatus
-            };
-          }
-          return t;
-        })
-      );
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const handleGenerateBrief = async (trendId: string) => {
     setGeneratingTrendId(trendId);
+    
+    // Trigger the skeleton loader to render after a 1-second delay so that the card's button shimmer is visible first
+    const skeletonTimeout = setTimeout(() => {
+      setShowSkeleton(true);
+    }, 1200);
+
     const startTime = Date.now();
     let briefId: string | null = null;
 
@@ -108,6 +45,21 @@ export default function TrendFeed({ initialTrends }: TrendFeedProps) {
       const data = await res.json();
       if (data.success && data.data) {
         briefId = data.data.id;
+        onBriefGenerated?.();
+
+        // Track locally to increment dashboard brief count immediately
+        try {
+          const localBriefsStr = localStorage.getItem('viralspy_generated_briefs');
+          const localBriefs = localBriefsStr ? JSON.parse(localBriefsStr) : [];
+          if (Array.isArray(localBriefs)) {
+            if (!localBriefs.includes(briefId)) {
+              localBriefs.push(briefId);
+              localStorage.setItem('viralspy_generated_briefs', JSON.stringify(localBriefs));
+            }
+          }
+        } catch (e) {
+          console.error('Local briefs tracking failed:', e);
+        }
       }
     } catch (err) {
       console.error('Error generating strategist brief:', err);
@@ -118,7 +70,9 @@ export default function TrendFeed({ initialTrends }: TrendFeedProps) {
     const remaining = Math.max(3000 - elapsed, 0);
 
     setTimeout(() => {
+      clearTimeout(skeletonTimeout);
       setGeneratingTrendId(null);
+      setShowSkeleton(false);
       if (briefId) {
         router.push(`/brief/${briefId}`);
       } else {
@@ -152,7 +106,7 @@ export default function TrendFeed({ initialTrends }: TrendFeedProps) {
     .sort((a, b) => b.velocity_score - a.velocity_score)
     .slice(0, 10);
 
-  if (generatingTrendId) {
+  if (showSkeleton) {
     return (
       <div className="py-12 flex flex-col justify-center items-center">
         <LoadingSkeleton />
@@ -171,7 +125,7 @@ export default function TrendFeed({ initialTrends }: TrendFeedProps) {
         <button
           onClick={handleReseed}
           disabled={loading}
-          className="flex items-center space-x-1.5 px-3 py-1.5 bg-gray-900 border border-gray-800 hover:border-gray-700 text-xs font-mono font-bold uppercase tracking-wider text-gray-400 hover:text-white rounded-lg transition-all"
+          className="flex items-center space-x-1.5 px-3 py-2 bg-white border border-gray-200 hover:border-[#FF6B4A] text-xs font-semibold text-gray-650 hover:text-[#FF6B4A] rounded-xl transition-all"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Reseed intel</span>
@@ -180,25 +134,29 @@ export default function TrendFeed({ initialTrends }: TrendFeedProps) {
 
       {/* Grid of cards */}
       {filteredTrends.length === 0 ? (
-        <div className="border border-gray-800 rounded-xl p-12 text-center bg-gray-900/50 space-y-4">
-          <div className="text-gray-500 font-mono text-sm uppercase">No active trends found for this niche</div>
+        <div className="border border-gray-200 rounded-2xl p-12 text-center bg-white space-y-4 shadow-card">
+          <div className="text-gray-500 font-semibold text-sm uppercase">No active trends found for this niche</div>
           <button
             onClick={handleReseed}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-mono font-bold uppercase tracking-wider transition-all"
+            className="px-4 py-2 bg-[#FF6B4A] hover:bg-[#ff5a33] text-white rounded-full text-xs font-semibold transition-all hover:scale-[1.02]"
           >
             Reseed mock data
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredTrends.map((trend) => (
-            <TrendCard
-              key={trend.id}
-              trend={trend}
-              onGenerateBrief={handleGenerateBrief}
-              isGenerating={generatingTrendId === trend.id}
-            />
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {filteredTrends.map((trend, idx) => {
+            const delayClass = `delay-${Math.min(idx * 75, 600)}`;
+            return (
+              <div key={trend.id} className={`animate-fade-up ${delayClass}`}>
+                <TrendCard
+                  trend={trend}
+                  onGenerateBrief={handleGenerateBrief}
+                  isGenerating={generatingTrendId === trend.id}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

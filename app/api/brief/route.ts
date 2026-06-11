@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '../../../lib/supabase-server';
 import { openai, isOpenAiConfigured } from '../../../lib/openai';
 import { Brief, BriefFormatType, Angle } from '../../../types';
@@ -110,7 +111,7 @@ export async function GET(request: Request) {
     };
   };
 
-  if (!supabase) {
+  if (!supabase || briefId.startsWith('demo-')) {
     return NextResponse.json({ success: true, data: getSimulatedBrief() });
   }
 
@@ -141,7 +142,18 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = createServerSupabaseClient();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const serviceRoleKey = supabaseServiceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  
+  const supabase = supabaseUrl && serviceRoleKey
+    ? createClient(supabaseUrl, serviceRoleKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      })
+    : null;
   
   try {
     const { trendId, userId, forceRegenerate } = await request.json();
@@ -149,7 +161,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Missing trendId parameter.' }, { status: 400 });
     }
 
-    if (supabase) {
+    if (supabase && !trendId.startsWith('demo-') && (!userId || !userId.startsWith('demo-'))) {
       // Delete cached brief if forceRegenerate requested
       if (forceRegenerate) {
         await supabase
@@ -183,7 +195,7 @@ export async function POST(request: Request) {
     let momentumStatus = "RISING";
     let dbTrendId = trendId;
 
-    if (supabase) {
+    if (supabase && !trendId.startsWith('demo-')) {
       const { data: trendData } = await supabase
         .from('trends')
         .select('*')
@@ -261,7 +273,7 @@ Momentum: ${momentumStatus}`;
       created_at: new Date().toISOString()
     };
 
-    if (!supabase) {
+    if (!supabase || trendId.startsWith('demo-') || (userId && userId.startsWith('demo-'))) {
       return NextResponse.json({
         success: true,
         data: {
@@ -275,7 +287,7 @@ Momentum: ${momentumStatus}`;
       .from('briefs')
       .insert({
         trend_id: briefData.trend_id,
-        user_id: userId && userId !== 'demo-user-1234' ? userId : null, // Set null if guest
+        user_id: userId && !userId.startsWith('demo-') ? userId : null,
         hook: briefData.hook,
         angles: JSON.stringify(briefData.angles),
         format: briefData.format,

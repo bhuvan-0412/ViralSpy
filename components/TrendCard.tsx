@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trend } from '../types';
 import MomentumBadge from './MomentumBadge';
 import Sparkline from './Sparkline';
@@ -12,14 +12,14 @@ interface TrendCardProps {
 }
 
 const YouTubeIcon = () => (
-  <svg className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M2 8a4 4 0 0 1 4 -4h12a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-12a4 4 0 0 1 -4 -4v-8z" />
     <path d="M10 9l5 3l-5 3z" />
   </svg>
 );
 
 const InstagramIcon = () => (
-  <svg className="w-4 h-4 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg className="w-4 h-4 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 4m0 4a4 4 0 0 1 4 -4h8a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-8a4 4 0 0 1 -4 -4z" />
     <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
     <path d="M16.5 7.5l0 .01" />
@@ -27,7 +27,7 @@ const InstagramIcon = () => (
 );
 
 const RedditIcon = () => (
-  <svg className="w-4 h-4 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg className="w-4 h-4 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 8c2.47 0 4.43 -2.05 4 -4.5c.3 -1.5 1.5 -2.5 3 -2.5c1.66 0 3 1.34 3 3c0 1.5 -1.5 2.5 -3 2.5" />
     <path d="M12 8l0 4" />
     <path d="M12 12c-3.86 0 -7 2.68 -7 6c0 .32 .03 .64 .09 .95c.83 1.25 2.3 2.05 3.91 2.05c1.61 0 3.08 -.8 3.91 -2.05c.06 -.31 .09 -.63 .09 -.95c0 -3.32 -3.14 -6 -7 -6z" />
@@ -38,7 +38,7 @@ const RedditIcon = () => (
 );
 
 const XIcon = () => (
-  <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg className="w-4 h-4 text-gray-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 4l11.733 16h4.267l-11.733 -16z" />
     <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772" />
   </svg>
@@ -60,50 +60,62 @@ const PlatformIcon = ({ platform }: { platform: string }) => {
 };
 
 function formatTimeAgo(dateStr: string) {
-  if (!dateStr) return 'Detected recently';
+  if (!dateStr) return 'recently';
   const diff = Date.now() - new Date(dateStr).getTime();
   const hours = Math.floor(diff / 3600000);
   if (hours <= 0) {
     const mins = Math.floor(diff / 60000);
-    if (mins <= 0) return 'Detected just now';
-    return `Detected ${mins}m ago`;
+    if (mins <= 0) return 'just now';
+    return `${mins}m ago`;
   }
-  if (hours === 1) return 'Detected 1 hour ago';
-  return `Detected ${hours} hours ago`;
+  if (hours === 1) return '1 hour ago';
+  return `${hours} hours ago`;
 }
 
 export default function TrendCard({ trend, onGenerateBrief, isGenerating = false }: TrendCardProps) {
   const isExploding = trend.momentum_status === 'EXPLODING';
+  
+  // Count-up hook
+  const [displayScore, setDisplayScore] = useState(0);
+
+  useEffect(() => {
+    const target = Math.round(trend.velocity_score);
+    let startTimestamp: number | null = null;
+    const duration = 800; // Count-up over 800ms
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      setDisplayScore(Math.floor(progress * target));
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+
+    window.requestAnimationFrame(step);
+  }, [trend.velocity_score]);
   
   // Historical line points
   const sparklineData = Array.isArray(trend.raw_data?.sparkline) 
     ? trend.raw_data.sparkline 
     : [trend.velocity_score * 0.4, trend.velocity_score * 0.6, trend.velocity_score * 0.8, trend.velocity_score];
 
-  return (
-    <div
-      className={`bg-gray-900 border rounded-xl p-5 hover:border-gray-700 transition-colors flex flex-col justify-between h-full ${
-        isExploding ? 'border-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.08)] animate-pulse-border' : 'border-gray-800'
-      }`}
-    >
-      <style jsx global>{`
-        @keyframes borderPulse {
-          0% { border-color: rgba(239, 68, 68, 0.25); box-shadow: 0 0 5px rgba(239, 68, 68, 0.05); }
-          100% { border-color: rgba(239, 68, 68, 0.75); box-shadow: 0 0 15px rgba(239, 68, 68, 0.2); }
-        }
-        .animate-pulse-border {
-          animation: borderPulse 2s infinite alternate ease-in-out;
-        }
-      `}</style>
+  const containerClasses = `bg-white border rounded-2xl p-5 hover:border-gray-300 transition-all flex flex-col justify-between h-full shadow-card ${
+    isExploding 
+      ? 'border-l-4 border-l-[#FF6B4A] border-gray-250 ring-2 ring-red-400/40 ring-offset-2 animate-pulse' 
+      : 'border-gray-200'
+  }`;
 
+  return (
+    <div className={containerClasses}>
       {/* Header */}
       <div className="space-y-3">
         <div className="flex justify-between items-start">
           <div className="flex items-center space-x-2">
-            <span className="p-1.5 bg-gray-800/80 rounded border border-gray-750 flex items-center justify-center">
+            <span className="p-1.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
               <PlatformIcon platform={trend.platform} />
             </span>
-            <span className="text-[10px] font-mono font-bold tracking-wider text-gray-400 uppercase">
+            <span className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">
               {trend.platform}
             </span>
           </div>
@@ -111,14 +123,14 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating = false
         </div>
 
         <div>
-          <h3 className="text-lg font-bold text-white leading-tight tracking-tight hover:text-purple-400 transition-colors cursor-default">
+          <h3 className="text-xl font-bold text-[#1A1A1A] leading-tight tracking-tight hover:text-[#FF6B4A] transition-colors cursor-default">
             {trend.name}
           </h3>
-          <div className="flex items-center space-x-2 mt-1.5">
-            <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-purple-400 bg-purple-950/30 border border-purple-900/40 px-2 py-0.5 rounded-full">
+          <div className="flex items-center space-x-2 mt-2">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#FF6B4A] bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full">
               {trend.niche}
             </span>
-            <span className="text-[10px] font-mono text-gray-500">
+            <span className="text-[10px] font-semibold text-gray-400">
               {Math.round(trend.confidence_score * 100)}% confidence
             </span>
           </div>
@@ -126,35 +138,37 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating = false
       </div>
 
       {/* Sparkline & Stats */}
-      <div className="my-5 grid grid-cols-2 gap-4 items-center border-t border-b border-gray-800/50 py-4">
+      <div className="my-5 grid grid-cols-2 gap-4 items-center border-t border-b border-gray-100 py-4">
         <div>
-          <div className="text-[9px] font-mono font-semibold text-gray-500 uppercase tracking-widest">
+          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
             Velocity Score
           </div>
-          <div className="text-2xl font-black text-white mt-1 flex items-baseline space-x-1">
-            <span>{trend.velocity_score}%</span>
+          <div className="text-3xl font-black text-[#1A1A1A] mt-0.5">
+            {displayScore}%
           </div>
-          <div className="text-[10px] font-mono text-gray-400 mt-0.5">
+          <div className="text-[11px] text-gray-500 mt-0.5 font-medium">
             {(trend.post_count / 1000).toFixed(1)}K posts total
           </div>
         </div>
 
-        <div className="h-12 w-full">
-          <Sparkline data={sparklineData.slice(-4)} />
+        <div className="h-10 w-full pr-1">
+          <Sparkline data={sparklineData.slice(-4)} stroke={isExploding ? '#ef4444' : '#FF6B4A'} />
         </div>
       </div>
 
       {/* Footer Actions */}
       <div className="flex items-center justify-between pt-2">
-        <span className="text-[10px] font-mono text-gray-500">
-          {formatTimeAgo(trend.detected_at)}
+        <span className="text-xs font-semibold text-gray-450">
+          Detected {formatTimeAgo(trend.detected_at)}
         </span>
         <button
           onClick={() => onGenerateBrief(trend.id)}
           disabled={isGenerating}
-          className="bg-purple-600 hover:bg-purple-500 text-white font-mono text-xs uppercase tracking-wider font-bold rounded-lg px-4 py-2 transition-all disabled:opacity-30 disabled:pointer-events-none"
+          className={`bg-[#FF6B4A] text-white font-semibold text-xs tracking-wider rounded-full px-4.5 py-2 hover:scale-[1.02] transition-all disabled:opacity-85 disabled:pointer-events-none ${
+            isGenerating ? 'animate-shimmer' : ''
+          }`}
         >
-          {isGenerating ? 'Strategizing...' : 'Generate Brief'}
+          {isGenerating ? 'Strategizing...' : 'Generate Brief →'}
         </button>
       </div>
 

@@ -24,83 +24,82 @@ const MOCK_TRENDS = [
   { name: "deinfluencing skincare", niche: "beauty", platform: "INSTAGRAM", post_count: 430000, posts_per_hour: 1500, avg_posts_24h: 2100, velocity_score: 71.43, momentum_status: "PEAKED", confidence_score: 0.31 },
 ];
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const trendId = searchParams.get('id');
+export async function GET() {
   const supabase = createServerSupabaseClient();
 
-  const getSimulatedTrends = () => {
-    return MOCK_TRENDS.map((item, index) => {
-      const baseVal = item.velocity_score;
-      return {
-        id: `demo-trend-uuid-${index}`,
-        name: item.name,
-        niche: item.niche,
-        platform: item.platform,
-        post_count: item.post_count,
-        posts_per_hour: item.posts_per_hour,
-        avg_posts_24h: item.avg_posts_24h,
-        velocity_score: item.velocity_score,
-        momentum_status: item.momentum_status,
-        confidence_score: item.confidence_score,
-        detected_at: new Date(Date.now() - index * 3600000).toISOString(),
-        raw_data: {
-          sparkline: [
-            parseFloat((baseVal * 0.4).toFixed(2)),
-            parseFloat((baseVal * 0.6).toFixed(2)),
-            parseFloat((baseVal * 0.8).toFixed(2)),
-            baseVal
-          ]
-        }
-      };
-    });
+  const getSimulatedStats = () => {
+    // Trends detected in last 24h (all 20 mock trends are generated with < 24h offsets in mock lists)
+    const trendsDetectedToday = MOCK_TRENDS.length;
+    const explodingCount = MOCK_TRENDS.filter(t => t.momentum_status === 'EXPLODING').length;
+    const risingAndExploding = MOCK_TRENDS.filter(t => t.momentum_status === 'RISING' || t.momentum_status === 'EXPLODING');
+    const avgVelocity = risingAndExploding.length
+      ? Math.round(risingAndExploding.reduce((acc, t) => acc + t.velocity_score, 0) / risingAndExploding.length)
+      : 284;
+    
+    return {
+      trendsDetectedToday,
+      explodingRightNow: explodingCount,
+      avgVelocity,
+      briefsGenerated: 12
+    };
   };
 
-  // If a single trend ID is requested
-  if (trendId) {
-    if (supabase && !trendId.startsWith('demo-')) {
-      try {
-        const { data, error } = await supabase
-          .from('trends')
-          .select('*')
-          .eq('id', trendId)
-          .maybeSingle();
-
-        if (data) {
-          return NextResponse.json({ success: true, data });
-        }
-      } catch (err: any) {
-        console.error('Error fetching trend from DB:', err.message);
-      }
-    }
-
-    // Local simulation lookup
-    const list = getSimulatedTrends();
-    const match = trendId.match(/(\d+)$/);
-    const index = match ? parseInt(match[1], 10) : 0;
-    const item = list[index] || list[0];
-    item.id = trendId;
-    return NextResponse.json({ success: true, data: item });
+  if (!supabase) {
+    return NextResponse.json({ success: true, data: getSimulatedStats() });
   }
 
-  // Fetch all trends
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('trends')
-        .select('*')
-        .order('velocity_score', { ascending: false });
+  try {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    
+    // 1. Trends Detected Today
+    const { count: trendsDetectedToday, error: trendsCountError } = await supabase
+      .from('trends')
+      .select('*', { count: 'exact', head: true })
+      .gt('detected_at', oneDayAgo);
 
-      if (data && data.length > 0) {
-        return NextResponse.json({ success: true, data });
-      }
-    } catch (err: any) {
-      console.error('Error listing trends from DB:', err.message);
+    if (trendsCountError) throw trendsCountError;
+
+    // 2. EXPLODING Right Now
+    const { count: explodingRightNow, error: explodingError } = await supabase
+      .from('trends')
+      .select('*', { count: 'exact', head: true })
+      .eq('momentum_status', 'EXPLODING');
+
+    if (explodingError) throw explodingError;
+
+    // 3. Avg Velocity Score across all RISING + EXPLODING trends
+    const { data: velocityData, error: velocityError } = await supabase
+      .from('trends')
+      .select('velocity_score')
+      .in('momentum_status', ['RISING', 'EXPLODING']);
+
+    if (velocityError) throw velocityError;
+
+    let avgVelocity = 0;
+    if (velocityData && velocityData.length > 0) {
+      const sum = velocityData.reduce((acc, t) => acc + Number(t.velocity_score), 0);
+      avgVelocity = Math.round(sum / velocityData.length);
     }
-  }
 
-  // Local simulation fallback
-  const fallbackList = getSimulatedTrends();
-  fallbackList.sort((a, b) => b.velocity_score - a.velocity_score);
-  return NextResponse.json({ success: true, data: fallbackList });
+    // 4. Briefs Generated
+    const { count: briefsGenerated, error: briefsError } = await supabase
+      .from('briefs')
+      .select('*', { count: 'exact', head: true });
+
+    if (briefsError) throw briefsError;
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        trendsDetectedToday: trendsDetectedToday || 0,
+        explodingRightNow: explodingRightNow || 0,
+        avgVelocity: avgVelocity || 0,
+        briefsGenerated: briefsGenerated || 0
+      }
+    });
+
+  } catch (err: any) {
+    console.warn('Fetching real Supabase stats failed, using simulated fallback:', err.message);
+    return NextResponse.json({ success: true, data: getSimulatedStats() });
+  }
 }
