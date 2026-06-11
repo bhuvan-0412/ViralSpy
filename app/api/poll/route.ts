@@ -135,9 +135,12 @@ export async function GET() {
             posts_per_hour: postsPerHour,
             avg_posts_24h: avg,
             velocity_score: score,
+            peak_velocity: score,
             momentum_status: status,
             confidence_score: Math.min(0.95, score / 500),
-            detected_at: new Date().toISOString()
+            detected_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }, { onConflict: 'name,platform', ignoreDuplicates: false })
           .select()
           .single();
@@ -219,9 +222,12 @@ export async function GET() {
               posts_per_hour: postsPerHour,
               avg_posts_24h: avg,
               velocity_score: vScore,
+              peak_velocity: vScore,
               momentum_status: status,
               confidence_score: Math.min(0.90, vScore / 500),
-              detected_at: new Date().toISOString()
+              detected_at: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             }, { onConflict: 'name,platform', ignoreDuplicates: false })
             .select()
             .single();
@@ -288,9 +294,12 @@ export async function GET() {
           posts_per_hour: postsPerHour,
           avg_posts_24h: avg,
           velocity_score: score,
+          peak_velocity: score,
           momentum_status: status,
           confidence_score: Math.min(0.85, score / 500),
-          detected_at: new Date().toISOString()
+          detected_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }, { onConflict: 'name,platform', ignoreDuplicates: false })
         .select()
         .single();
