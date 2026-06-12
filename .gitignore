@@ -38,3 +38,7 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# local dev / scratch files — never push
+extracted_prompts.md
+scratch_extract.js
