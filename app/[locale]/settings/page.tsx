@@ -82,9 +82,9 @@ const presets = [
 ];
 
 const languages = [
-  { code: 'en', flag: '🇬🇧', label: 'English', native: 'English' },
-  { code: 'hi', flag: '🇮🇳', label: 'Hindi', native: 'हिन्दी' },
-  { code: 'te', flag: '🇮🇳', label: 'Telugu', native: 'తెలుగు' }
+  { code: 'en', flag: 'ENG', label: 'English', native: 'English' },
+  { code: 'hi', flag: 'HIN', label: 'Hindi', native: 'हिन्दी' },
+  { code: 'te', flag: 'TEL', label: 'Telugu', native: 'తెలుగు' }
 ];
 
 export default function SettingsPage() {
@@ -372,7 +372,7 @@ export default function SettingsPage() {
                       : 'border-gray-200 hover:border-gray-300 bg-white text-gray-600'
                   }`}
                 >
-                  <span className="text-3xl mb-2">{lang.flag}</span>
+                  <span className={`text-2xl font-black mb-2 tracking-tight ${isSelected ? 'text-[#FF6B4A]' : 'text-gray-400'}`}>{lang.flag}</span>
                   <span className="text-xs font-bold leading-tight uppercase tracking-wider">{lang.native}</span>
                   <span className="text-[10px] text-gray-400 mt-1 uppercase font-semibold">{lang.label}</span>
                   {isSelected && (
