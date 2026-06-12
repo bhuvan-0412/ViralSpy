@@ -308,6 +308,10 @@ export default function SettingsPage() {
     return locale === 'en' ? '/dashboard' : `/${locale}/dashboard`;
   };
 
+  const getLocalizedSetupPath = () => {
+    return locale === 'en' ? '/setup' : `/${locale}/setup`;
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F5F2] text-[#1A1A1A] flex flex-col justify-between font-sans relative">
       <header className="sticky top-0 bg-white border-b border-gray-200 z-50 py-3.5 px-4 sm:px-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
@@ -524,6 +528,12 @@ export default function SettingsPage() {
                   <li>Run the service in your terminal: <code className="bg-gray-100 text-red-500 px-1.5 py-0.5 rounded font-mono text-[10px]">ollama serve</code>.</li>
                   <li>Pull the model to generate briefs: <code className="bg-gray-100 text-red-500 px-1.5 py-0.5 rounded font-mono text-[10px]">ollama pull llama3</code>.</li>
                 </ol>
+                <a 
+                  href={getLocalizedSetupPath()}
+                  className="flex items-center gap-2 text-[#FF6B4A] hover:underline text-sm font-medium mt-2 pt-1 border-t border-gray-100"
+                >
+                  📖 Step-by-step setup guide for beginners →
+                </a>
               </div>
             </div>
           )}

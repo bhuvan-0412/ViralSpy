@@ -6,7 +6,7 @@ import { useAuth } from '../../../components/AuthProvider';
 import { saveUserProfile } from '../../../lib/supabase';
 import { NicheType } from '../../../types';
 import { Check, ArrowRight, ArrowLeft, Eye, EyeOff, Sparkles, AlertCircle, Cpu, Key, Database, Globe } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import ProviderSetupGuide, { GuideProvider } from '../../../components/ProviderSetupGuide';
 
 const NICHES: { id: NicheType; label: string; desc: string; emoji: string }[] = [
@@ -44,6 +44,7 @@ export default function OnboardingPage() {
   const { user, loading, refreshUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const t = useTranslations('onboarding');
+  const locale = useLocale();
   
   // Skip logic states
   const [skippedStep1, setSkippedStep1] = useState(false);
@@ -548,7 +549,7 @@ export default function OnboardingPage() {
                     <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-150">
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-gray-550">Ollama URL</label>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-gray-555">Ollama URL</label>
                           <input
                             type="text"
                             value={ollamaUrl}
@@ -557,7 +558,7 @@ export default function OnboardingPage() {
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-gray-550">Model</label>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-gray-555">Model</label>
                           <input
                             type="text"
                             value={ollamaModel}
@@ -566,7 +567,16 @@ export default function OnboardingPage() {
                           />
                         </div>
                       </div>
-                      <div className="flex justify-between items-center mt-1">
+                      
+                      <a 
+                        href={locale === 'en' ? '/setup' : `/${locale}/setup`}
+                        target="_blank"
+                        className="flex items-center gap-2 text-[#FF6B4A] hover:underline text-sm mt-3"
+                      >
+                        🆕 First time? Follow our easy setup guide →
+                      </a>
+
+                      <div className="flex justify-between items-center mt-1 pt-2 border-t border-gray-150/50">
                         <a
                           href="https://ollama.com"
                           target="_blank"

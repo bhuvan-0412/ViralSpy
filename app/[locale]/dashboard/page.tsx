@@ -12,13 +12,15 @@ import Logo from '../../../components/Logo';
 import LanguageSwitcher from '../../../components/LanguageSwitcher';
 import AIProviderBadge from '../../../components/AIProviderBadge';
 import { formatIndianNumber, formatIST } from '../../../lib/format';
-import { LogOut, Eye, TrendingUp, Flame, Activity, FileText, RefreshCw, CheckCircle, Settings } from 'lucide-react';
+import { LogOut, Eye, TrendingUp, Flame, Activity, FileText, RefreshCw, CheckCircle, Settings, HelpCircle } from 'lucide-react';
+import { useAIProvider } from '../../../hooks/useAIProvider';
 
 export default function DashboardPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('dashboard');
   const tNav = useTranslations('nav');
+  const { config } = useAIProvider();
   
   const { user, loading, refreshUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -250,6 +252,17 @@ export default function DashboardPage() {
                 {(profile?.display_name || 'Demo Creator').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
               </div>
             </div>
+
+            {/* Help button if Ollama */}
+            {((profile?.ai_provider || config.provider) === 'ollama') && (
+              <button
+                onClick={() => router.push(getLocalizedPath('/setup'))}
+                className="p-2 rounded-xl bg-orange-50 hover:bg-orange-100 border border-orange-100 text-[#FF6B4A] hover:text-[#ff5a33] transition-colors"
+                title="Local AI Setup Guide"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </button>
+            )}
 
             {/* Settings button */}
             <button
