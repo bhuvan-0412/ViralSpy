@@ -49,19 +49,19 @@ export async function GET(request: Request) {
           onboarded: false
         })
         return NextResponse.redirect(
-          new URL('/onboarding', requestUrl.origin)
+          new URL('/en/onboarding', requestUrl.origin)
         )
       }
 
       // Redirect based on onboarding status
       if (!profile.onboarded) {
         return NextResponse.redirect(
-          new URL('/onboarding', requestUrl.origin)
+          new URL('/en/onboarding', requestUrl.origin)
         )
       }
 
       return NextResponse.redirect(
-        new URL('/dashboard', requestUrl.origin)
+        new URL('/en/dashboard', requestUrl.origin)
       )
     }
   }
