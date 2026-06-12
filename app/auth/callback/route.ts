@@ -21,12 +21,12 @@ export async function GET(request: Request) {
 
       if (!profile || !profile.onboarded) {
         return NextResponse.redirect(
-          new URL('/en/onboarding', requestUrl.origin)
+          new URL('/onboarding', requestUrl.origin)
         )
       }
 
       return NextResponse.redirect(
-        new URL('/en/dashboard', requestUrl.origin)
+        new URL('/dashboard', requestUrl.origin)
       )
     }
   }

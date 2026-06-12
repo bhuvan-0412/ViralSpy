@@ -1,4 +1,11 @@
+import { defineRouting } from 'next-intl/routing'
 import { getRequestConfig } from 'next-intl/server'
+
+export const routing = defineRouting({
+  locales: ['en', 'hi', 'te'],
+  defaultLocale: 'en',
+  localePrefix: 'as-needed'
+})
 
 export default getRequestConfig(async (context) => {
   // Extract locale from the context (handles both requestLocale promise and direct locale property)
