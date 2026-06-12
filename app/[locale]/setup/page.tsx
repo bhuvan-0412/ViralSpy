@@ -48,6 +48,63 @@ export default function SetupPage() {
     cloud: false,
   });
 
+  const [detectedUrl, setDetectedUrl] = useState('http://localhost:11434');
+  const [modelName, setModelName] = useState('llama3');
+  const [detecting, setDetecting] = useState(false);
+  const [detectionStatus, setDetectionStatus] = useState<'idle' | 'success' | 'failed'>('idle');
+  const [showSaved, setShowSaved] = useState(false);
+  const ollamaUrl = 'http://localhost:11434';
+
+  const detectUrl = async () => {
+    setDetecting(true);
+    setDetectionStatus('idle');
+    const urlsToTry = [
+      'http://localhost:11434',
+      'http://127.0.0.1:11434', 
+      'http://172.29.130.173:11434',
+      'http://172.17.0.1:11434',
+    ];
+    for (const url of urlsToTry) {
+      try {
+        const res = await fetch(`/api/ollama-test?url=${encodeURIComponent(url)}`);
+        const data = await res.json();
+        if (data.connected) {
+          setDetectedUrl(url);
+          setDetectionStatus('success');
+          setDetecting(false);
+          return;
+        }
+      } catch (err) {
+        // ignore and continue
+      }
+    }
+    setDetectionStatus('failed');
+    setDetecting(false);
+  };
+
+  const saveToSettings = () => {
+    const current = JSON.parse(
+      localStorage.getItem('viralspy_ai_config') || '{}'
+    )
+    localStorage.setItem('viralspy_ai_config', 
+      JSON.stringify({
+        ...current,
+        provider: 'ollama',
+        ollamaUrl: detectedUrl || ollamaUrl,
+        ollamaModel: modelName
+      })
+    )
+    // Mark step 4 completed
+    setStepsCompleted((prev) => ({ ...prev, 4: true }));
+    // Show success toast
+    setShowSaved(true)
+    setTimeout(() => setShowSaved(false), 3000)
+    // Smooth scroll to Step 5
+    setTimeout(() => {
+      stepRefs[5]?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
   const stepRefs = {
     1: useRef<HTMLDivElement>(null),
     2: useRef<HTMLDivElement>(null),
@@ -535,38 +592,99 @@ export default function SetupPage() {
             </div>
           </div>
 
+          {/* Auto-detect button and warning card */}
+          <div className="pt-2 space-y-4">
+            <button
+              type="button"
+              onClick={detectUrl}
+              disabled={detecting}
+              className="px-4 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-650 hover:text-gray-900 border border-gray-200 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50"
+            >
+              {detecting ? (
+                <>
+                  <span className="animate-spin text-sm">⌛</span>
+                  <span>Detecting...</span>
+                </>
+              ) : (
+                <span>🔍 Auto-detect my Ollama URL</span>
+              )}
+            </button>
+            
+            {detectionStatus === 'success' && (
+              <p className="text-xs font-semibold text-green-600 mt-2">
+                ✅ Found at {detectedUrl}!
+              </p>
+            )}
+            {detectionStatus === 'failed' && (
+              <p className="text-xs font-semibold text-red-505 mt-2">
+                ❌ Ollama not detected. Make sure it's running (Step 2)
+              </p>
+            )}
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+              <p className="font-semibold text-amber-800 mb-2">
+                🪟 Windows Users — Important!
+              </p>
+              <p className="text-amber-700 text-sm mb-3">
+                If Ollama is running inside WSL (Linux), localhost won't work. You need your WSL IP.
+              </p>
+              <p className="text-amber-700 text-sm mb-2">
+                Run this in your Linux terminal to find your IP:
+              </p>
+              <CopyCodeBlock code="hostname -I" />
+              <p className="text-amber-700 text-sm mt-2">
+                Use the first number shown (looks like 172.x.x.x) and replace localhost with it.
+              </p>
+              <p className="text-amber-700 text-sm mt-2 font-medium">
+                Then start Ollama with:
+              </p>
+              <CopyCodeBlock code="OLLAMA_HOST=0.0.0.0:11434 ollama serve" />
+            </div>
+          </div>
+
           {/* Display copyable fields */}
           <div className="space-y-2.5 pt-2">
-            <span className="text-xs font-bold text-gray-700 block">Now go to Settings and enter:</span>
+            <span className="text-xs font-bold text-gray-700 block">Configure URL and Model Name:</span>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-150">
               <div className="space-y-1">
                 <span className="text-[9px] font-bold text-gray-400 uppercase block">Ollama URL</span>
-                <div className="bg-white rounded-lg border border-gray-200 px-3 py-2 flex justify-between items-center text-xs font-mono text-gray-750">
-                  <span>http://localhost:11434</span>
-                </div>
+                <input
+                  type="text"
+                  value={detectedUrl}
+                  onChange={(e) => setDetectedUrl(e.target.value)}
+                  className={`w-full text-xs font-mono px-3 py-2 bg-white rounded-lg border focus:outline-none focus:border-[#FF6B4A] ${
+                    detectionStatus === 'success' ? 'border-green-500 bg-green-50/10 text-green-700 font-bold' : 'border-gray-200 text-gray-750'
+                  }`}
+                  placeholder="http://localhost:11434"
+                />
               </div>
               
               <div className="space-y-1">
                 <span className="text-[9px] font-bold text-gray-400 uppercase block">Model Name</span>
-                <div className="bg-white rounded-lg border border-gray-200 px-3 py-2 flex justify-between items-center text-xs font-mono text-gray-750">
-                  <span>llama3</span>
-                </div>
+                <input
+                  type="text"
+                  value={modelName}
+                  onChange={(e) => setModelName(e.target.value)}
+                  className="w-full text-xs font-mono px-3 py-2 bg-white rounded-lg border border-gray-200 focus:outline-none focus:border-[#FF6B4A] text-gray-750"
+                  placeholder="llama3"
+                />
               </div>
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 flex items-center gap-3">
             <button
-              onClick={() => {
-                setStepsCompleted(prev => ({ ...prev, 4: true }));
-                router.push(getLocalizedPath('/settings'));
-              }}
+              onClick={saveToSettings}
               className="px-5 py-3 bg-[#FF6B4A] hover:bg-[#ff5a33] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-1.5 shadow-sm"
             >
-              <Settings className="h-4 w-4" />
-              <span>⚙️ Go to Settings to connect →</span>
+              <span>💾 Save these settings to ViralSpy</span>
             </button>
+            {showSaved && (
+              <span className="text-xs font-bold text-green-600 animate-pulse">
+                ✅ Saved! You can now generate briefs.
+              </span>
+            )}
           </div>
         </div>
 
