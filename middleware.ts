@@ -1,61 +1,34 @@
-import createMiddleware from 'next-intl/middleware'
-import { createServerClient } from '@supabase/ssr'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const intlMiddleware = createMiddleware({
-  locales: ['en', 'hi', 'te'],
-  defaultLocale: 'en',
-  localePrefix: 'as-needed'
-})
-
 export async function middleware(req: NextRequest) {
-  // First run next-intl middleware to handle locale rewrites/redirects
-  let res = intlMiddleware(req)
-  
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return req.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
-            req.cookies.set(name, value)
-          })
-          res = intlMiddleware(req)
-          cookiesToSet.forEach(({ name, value, options }) => {
-            res.cookies.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
-  
+  const res = NextResponse.next()
+
+  // Completely skip middleware for auth routes
+  if (req.nextUrl.pathname.startsWith('/auth')) {
+    return res
+  }
+
+  const supabase = createMiddlewareClient({ req, res })
   const { data: { session } } = await supabase.auth.getSession()
 
-  const pathname = req.nextUrl.pathname
-  const cleanPath = pathname.replace(/^\/(en|hi|te)(\/|$)/, '/')
+  // Public routes — always accessible
+  const isPublic =
+    req.nextUrl.pathname === '/' ||
+    req.nextUrl.pathname.startsWith('/auth') ||
+    req.nextUrl.pathname.startsWith('/api')
 
-  const publicRoutes = ['/', '/auth', '/auth/callback']
-  const isPublic = publicRoutes.some(route =>
-    req.nextUrl.pathname.startsWith(route)
-  )
-
-  // If not logged in and trying to access protected route
+  // Not logged in + protected route → back to landing
   if (!session && !isPublic) {
     return NextResponse.redirect(new URL('/', req.url))
   }
 
-  // If logged in and on landing page — go to dashboard
-  if (session && cleanPath === '/') {
-    // Respect locale prefix if present in URL
-    const locale = pathname.split('/')[1]
-    const hasLocale = ['en', 'hi', 'te'].includes(locale)
-    const redirectUrl = new URL(hasLocale ? `/${locale}/dashboard` : '/dashboard', req.url)
-    return NextResponse.redirect(redirectUrl)
+  // Logged in + on landing page → go to dashboard
+  if (session && req.nextUrl.pathname === '/') {
+    return NextResponse.redirect(
+      new URL('/en/dashboard', req.url)
+    )
   }
 
   return res
@@ -63,6 +36,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api|auth).*)',
   ]
 }
