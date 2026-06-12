@@ -2,6 +2,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "briefs": "My Briefs",
+    "feedback": "Feedback",
     "settings": "Settings",
     "logout": "Logout"
   },

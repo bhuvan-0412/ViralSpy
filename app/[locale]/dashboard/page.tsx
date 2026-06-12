@@ -12,7 +12,7 @@ import Logo from '../../../components/Logo';
 import LanguageSwitcher from '../../../components/LanguageSwitcher';
 import AIProviderBadge from '../../../components/AIProviderBadge';
 import { formatIndianNumber, formatIST } from '../../../lib/format';
-import { LogOut, Eye, TrendingUp, Flame, Activity, FileText, RefreshCw, CheckCircle, Settings, HelpCircle } from 'lucide-react';
+import { LogOut, Eye, TrendingUp, Flame, Activity, FileText, RefreshCw, CheckCircle, Settings, HelpCircle, MessageSquare } from 'lucide-react';
 import { useAIProvider } from '../../../hooks/useAIProvider';
 
 export default function DashboardPage() {
@@ -223,8 +223,13 @@ export default function DashboardPage() {
           </div>
 
           {/* Nav Links Center */}
-          <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold text-gray-650">
-            <a href="#" className="text-[#FF6B4A] hover:text-[#FF6B4A] transition-colors">{t('title')}</a>
+          <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold text-gray-655">
+            <a href="#" className="text-gray-500 hover:text-[#FF6B4A] transition-colors">{t('title')}</a>
+            <button onClick={() => router.push(getLocalizedPath('/dashboard'))} className="hover:text-[#FF6B4A] transition-colors">{tNav('briefs')}</button>
+            <button onClick={() => router.push(getLocalizedPath('/feedback'))} className="hover:text-[#FF6B4A] transition-colors flex items-center gap-1.5">
+              <MessageSquare className="h-4 w-4" />
+              <span>{tNav('feedback')}</span>
+            </button>
             <button onClick={() => router.push(getLocalizedPath('/settings'))} className="hover:text-[#FF6B4A] transition-colors">{tNav('settings')}</button>
           </nav>
 
