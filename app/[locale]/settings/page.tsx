@@ -193,26 +193,42 @@ export default function SettingsPage() {
   };
 
   const handleTestOllama = async () => {
-    setTestingOllama(true);
-    setOllamaStatus(null);
+    setTestingOllama(true)
+    setOllamaStatus(null)
+    
+    // Clean URL
+    const cleanUrl = ollamaUrl.replace(/\/$/, '')
+    
     try {
-      const res = await fetch(
-        `/api/ollama-test?url=${encodeURIComponent(ollamaUrl)}&model=${ollamaModel}`
-      );
-      const data = await res.json();
+      // Try direct fetch from browser (client-side)
+      // This works because the browser is on Windows 
+      // which can reach WSL IP directly
+      const res = await fetch(`${cleanUrl}/api/tags`, {
+        signal: AbortSignal.timeout(5000)
+      })
+      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      
+      const data = await res.json()
+      const models = data.models?.map((m: any) => m.name) || []
+      const hasModel = models.some((m: string) => 
+        m.startsWith(ollamaModel.split(':')[0]))
+      
       setOllamaStatus({
         tested: true,
-        connected: data.connected,
-        message: data.message
-      });
-    } catch (e) {
+        connected: true,
+        message: hasModel 
+          ? `Connected — ${ollamaModel} ready ✓`
+          : `Connected but ${ollamaModel} not pulled yet`
+      })
+    } catch (e: any) {
       setOllamaStatus({
         tested: true,
         connected: false,
-        message: tErrors('ollamaNotRunning')
-      });
+        message: 'Cannot reach Ollama. Check URL and make sure ollama serve is running.'
+      })
     } finally {
-      setTestingOllama(false);
+      setTestingOllama(false)
     }
   };
 
