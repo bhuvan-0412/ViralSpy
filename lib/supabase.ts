@@ -169,42 +169,25 @@ export async function getUserProfile(): Promise<UserProfile | null> {
   return data;
 }
 
-export async function saveUserProfile(profile: Partial<UserProfile>): Promise<UserProfile | null> {
-  const user = await getCurrentUser();
-  if (!user) return null;
-
-  if (isDemoModeActive()) {
-    const current = await getUserProfile();
-    const updated = {
-      ...(current || {
-        id: user.id,
-        created_at: new Date().toISOString(),
-        onboarded: true
-      }),
-      ...profile,
-      updated_at: new Date().toISOString()
-    } as UserProfile;
+export async function saveUserProfile(updates: object) {
+  try {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null // Not logged in, skip silently
     
-    safeLocalStorageSet('viralspy_guest_profile', JSON.stringify(updated));
-    return updated;
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .upsert({ id: user.id, ...updates })
+      .select()
+      .single()
+    
+    if (error) {
+      if (error.code === '42501') return null // RLS, skip
+      console.error('Error saving profile:', error)
+      return null
+    }
+    return data
+  } catch (e) {
+    return null // Never crash the app for profile saves
   }
-
-  if (!supabase) return null;
-
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .upsert({
-      id: user.id,
-      ...profile,
-      updated_at: new Date().toISOString()
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error saving profile:', error);
-    return null;
-  }
-
-  return data;
 }

@@ -79,28 +79,23 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating: propIs
       const { provider, ollamaUrl, ollamaModel } = config;
 
       if (provider === 'ollama') {
-        // --- Proxy-based Ollama call ---
-        // Browser → HTTPS /api/ollama-proxy → HTTP WSL:11434
-        // Avoids Mixed Content block (browser never touches HTTP directly)
-        const briefJson = await generateBriefWithOllama(
-          trend.name,
-          trend.niche,
-          trend.platform,
-          trend.velocity_score,
-          trend.momentum_status,
+        const briefData = await generateBriefWithOllama(
+          {
+            trendId: trend.id,
+            trendName: trend.name,
+            niche: trend.niche,
+            platform: trend.platform,
+            velocityScore: trend.velocity_score,
+            momentumStatus: trend.momentum_status,
+            locale
+          },
           ollamaUrl,
-          ollamaModel,
-          locale
+          ollamaModel
         );
 
-        // POST to /api/brief with the pre-generated brief — server saves to Supabase only
-        const response = await fetch('/api/brief', {
+        const saveRes = await fetch('/api/brief', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...getHeaders(),
-            'x-locale': locale
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             trendId: trend.id,
             trendName: trend.name,
@@ -109,16 +104,12 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating: propIs
             velocityScore: trend.velocity_score,
             momentumStatus: trend.momentum_status,
             preGenerated: true,
-            briefData: briefJson
+            briefData: briefData
           })
-        });
-
-        const result = await response.json();
+        })
+        const result = await saveRes.json()
         if (result.data?.id) {
-          const localizedPath = locale === 'en' ? `/brief/${result.data.id}` : `/${locale}/brief/${result.data.id}`;
-          router.push(localizedPath);
-        } else {
-          throw new Error(result.error || 'No brief ID returned');
+          router.push(`/${locale}/brief/${result.data.id}`)
         }
       } else {
         // --- Non-Ollama providers: server-side generation (BYOK / Gemini) ---

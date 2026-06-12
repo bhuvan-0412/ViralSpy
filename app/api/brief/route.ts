@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { createServerSupabaseClient } from '../../../lib/supabase-server';
+import { createServerSupabaseClient, createServerClient } from '../../../lib/supabase-server';
 import { validateEnv } from '../../../lib/env';
 import { generateBrief } from '../../../lib/ai-provider';
 import { getOllamaUrl } from '../../../lib/wsl-detect';
@@ -168,6 +168,50 @@ export async function POST(request: Request) {
     const { trendId, userId, forceRegenerate, preGenerated, briefData: preGeneratedBrief } = body;
     let trendName = body.trendName;
     console.log('Brief API called with:', { trendId, trendName })
+
+    if (preGenerated && preGeneratedBrief && trendId) {
+      // Brief already generated, just save to Supabase
+      const supabase = createServerClient()
+      
+      // Verify trend exists
+      const { data: trend } = await supabase
+        .from('trends')
+        .select('id')
+        .eq('id', trendId)
+        .single()
+      
+      if (!trend) {
+        return Response.json(
+          { error: 'Trend not found' }, 
+          { status: 404 }
+        )
+      }
+      
+      const { data: saved, error } = await supabase
+        .from('briefs')
+        .insert({
+          trend_id: trendId,
+          hook: preGeneratedBrief.hook,
+          angles: preGeneratedBrief.angles,
+          format: preGeneratedBrief.format || 'TALKING_HEAD',
+          hashtags: preGeneratedBrief.hashtags,
+          best_post_time: preGeneratedBrief.best_post_time,
+          estimated_reach: preGeneratedBrief.estimated_reach,
+          script_outline: preGeneratedBrief.script_outline,
+          model_used: 'ollama/llama3',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+      
+      if (error) {
+        console.error('Brief save error:', error)
+        return Response.json({ error: error.message }, 
+          { status: 500 })
+      }
+      
+      return Response.json({ data: saved })
+    }
     let niche = body.niche;
     let platform = body.platform;
     let velocityScore = body.velocityScore;
