@@ -21,7 +21,7 @@ export default function DashboardPage() {
   const t = useTranslations('dashboard');
   const tNav = useTranslations('nav');
   const { config } = useAIProvider();
-  
+
   const { user, loading, refreshUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [trends, setTrends] = useState<Trend[]>([]);
@@ -48,7 +48,7 @@ export default function DashboardPage() {
     try {
       const p = await getUserProfile();
       setProfile(p);
-      
+
       // Override localStorage configuration if profile has a synced ai_provider
       if (p && p.ai_provider) {
         try {
@@ -62,7 +62,7 @@ export default function DashboardPage() {
           console.error('LocalStorage sync failed:', e);
         }
       }
-      
+
       const res = await fetch('/api/trends');
       const data = await res.json();
       if (data.success && data.data) {
@@ -169,7 +169,7 @@ export default function DashboardPage() {
           if (t.name === '5-4-3-2-1 grounding method') {
             const tick = parseFloat((Math.random() * 2 + 0.5).toFixed(2));
             const newScore = parseFloat((t.velocity_score + tick).toFixed(2));
-            
+
             let newStatus = t.momentum_status;
             if (newScore >= 300) newStatus = 'EXPLODING';
             else if (newScore >= 150) newStatus = 'RISING';
@@ -214,11 +214,11 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#F7F5F2] text-[#1A1A1A] flex flex-col justify-between font-sans">
-      
+
       {/* Redesigned White Sticky Navbar */}
       <header className="sticky top-0 bg-white border-b border-gray-200 z-50 py-3.5 px-4 sm:px-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          
+
           {/* Logo Left */}
           <div className="flex items-center space-x-2.5">
             <Logo />
@@ -244,7 +244,7 @@ export default function DashboardPage() {
                 <span>{t('lastUpdated')}: {lastPolledLabel}</span>
               </span>
             )}
-            
+
             {/* Language Switcher component */}
             <LanguageSwitcher />
 
@@ -307,7 +307,7 @@ export default function DashboardPage() {
             </span>
           </div>
         )}
-        
+
         {/* Hero Stat Bar (4 metric cards in a row) */}
         {(() => {
           const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -320,7 +320,7 @@ export default function DashboardPage() {
 
           return (
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-up delay-75">
-              
+
               {/* Card 1: Trends Detected */}
               <div className="bg-white p-5 border border-gray-200 rounded-2xl shadow-card flex flex-col justify-between h-32 relative overflow-hidden transition-all duration-200 hover:shadow-md">
                 <div className="flex justify-between items-start">
@@ -396,7 +396,7 @@ export default function DashboardPage() {
               className="flex items-center space-x-1.5 px-3 py-2 bg-[#FF6B4A] hover:bg-[#ff5a33] text-white text-xs font-semibold rounded-xl transition-all disabled:opacity-60 disabled:pointer-events-none shrink-0"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isPollLoading ? 'animate-spin' : ''}`} />
-              <span>{isPollLoading ? 'Polling...' : `🔄 ${t('refreshData')}`}</span>
+              <span>{isPollLoading ? 'Polling...' : `${t('refreshData')}`}</span>
             </button>
           </div>
 
