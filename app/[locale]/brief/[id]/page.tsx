@@ -216,6 +216,35 @@ export default function BriefPage() {
         ) : (
           <>
             <main className="flex-grow max-w-[720px] mx-auto w-full py-6 px-4 sm:px-0">
+              {/* Brief Freshness Banner */}
+              {(() => {
+                const briefAge = brief.created_at
+                  ? Math.floor((Date.now() - new Date(brief.created_at).getTime()) / (1000 * 60 * 60))
+                  : 0;
+                const isOutdated = briefAge >= 6;
+                return (
+                  <div className={`flex items-center justify-between px-4 py-2 rounded-xl text-sm mb-4 ${
+                    isOutdated
+                      ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                      : 'bg-green-50 border border-green-200 text-green-700'
+                  }`}>
+                    <span>
+                      {isOutdated ? '⚠️' : '✅'}
+                      {briefAge === 0
+                        ? ' Generated just now'
+                        : ` Generated ${briefAge} hour${briefAge === 1 ? '' : 's'} ago`}
+                      {isOutdated && ' · This brief may be outdated'}
+                    </span>
+                    <button
+                      onClick={handleRegenerate}
+                      disabled={regenerating}
+                      className="flex items-center gap-1 px-3 py-1 bg-[#FF6B4A] text-white rounded-lg text-xs font-semibold hover:bg-[#e55a3a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {regenerating ? '...' : '↻ Refresh Brief'}
+                    </button>
+                  </div>
+                );
+              })()}
               <BriefCard
                 brief={brief}
                 trend={trend}

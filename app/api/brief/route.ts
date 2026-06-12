@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from '../../../lib/supabase-server';
 import { validateEnv } from '../../../lib/env';
 import { generateBrief } from '../../../lib/ai-provider';
 import { getOllamaUrl } from '../../../lib/wsl-detect';
+import { fetchCompetitorPosts } from '../../../lib/competitor-fetch';
 import { Brief, BriefFormatType, Angle } from '../../../types';
 
 function generateMockBrief(
@@ -257,14 +258,20 @@ export async function POST(request: Request) {
           || 'llama3'
         const lang = request.headers.get('x-locale') || 'en'
 
+        // Fetch real competitor posts to enrich the prompt
+        const competitors = await fetchCompetitorPosts(trendName, platform)
+        console.log(`Fetched ${competitors.length} competitor posts for ${trendName}`)
+
         const briefResult = await generateBrief(
           { trendName, niche, platform, velocityScore, momentumStatus },
           provider,
-          { byokProvider, byokKey, byokBaseUrl, byokModel, ollamaUrl, ollamaModel, lang }
+          { byokProvider, byokKey, byokBaseUrl, byokModel, ollamaUrl, ollamaModel, lang, competitors }
         );
         
         if (briefResult && typeof briefResult === 'object' && 'hook' in briefResult) {
           strategistBrief = briefResult as any;
+          // Stash metadata for Supabase insert
+          ;(strategistBrief as any)._meta = { model: ollamaModel || byokModel || 'default' }
         } else {
           throw new Error('Invalid AI response format');
         }
@@ -310,7 +317,9 @@ export async function POST(request: Request) {
         hashtags: JSON.stringify(briefData.hashtags),
         best_post_time: briefData.best_post_time,
         estimated_reach: briefData.estimated_reach,
-        script_outline: briefData.script_outline
+        script_outline: briefData.script_outline,
+        model_used: strategistBrief._meta?.model || 'default',
+        prompt_version: 2
       })
       .select()
       .single();
