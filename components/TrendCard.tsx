@@ -9,6 +9,7 @@ import { formatIndianNumber, formatIST } from '../lib/format';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useAIProvider } from '../hooks/useAIProvider';
+import { generateBriefWithOllama } from '../lib/ollama-client';
 
 interface TrendCardProps {
   trend: Trend;
@@ -67,7 +68,7 @@ const PlatformIcon = ({ platform }: { platform: string }) => {
 export default function TrendCard({ trend, onGenerateBrief, isGenerating: propIsGenerating = false }: TrendCardProps) {
   const router = useRouter();
   const locale = useLocale();
-  const { getHeaders } = useAIProvider();
+  const { config, getHeaders } = useAIProvider();
   
   const [localIsGenerating, setLocalIsGenerating] = useState(false);
   const isGenerating = propIsGenerating || localIsGenerating;
@@ -75,28 +76,75 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating: propIs
   const handleGenerateBrief = async () => {
     setLocalIsGenerating(true);
     try {
-      const response = await fetch('/api/brief', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getHeaders(),
-          'x-locale': locale
-        },
-        body: JSON.stringify({
-          trendId: trend.id,
-          trendName: trend.name,
-          niche: trend.niche,
-          platform: trend.platform,
-          velocityScore: trend.velocity_score,
-          momentumStatus: trend.momentum_status
-        })
-      });
-      const result = await response.json();
-      if (result.data?.id) {
-        const localizedPath = locale === 'en' ? `/brief/${result.data.id}` : `/${locale}/brief/${result.data.id}`;
-        router.push(localizedPath);
+      const { provider, ollamaUrl, ollamaModel } = config;
+
+      if (provider === 'ollama') {
+        // --- Proxy-based Ollama call ---
+        // Browser → HTTPS /api/ollama-proxy → HTTP WSL:11434
+        // Avoids Mixed Content block (browser never touches HTTP directly)
+        const briefJson = await generateBriefWithOllama(
+          trend.name,
+          trend.niche,
+          trend.platform,
+          trend.velocity_score,
+          trend.momentum_status,
+          ollamaUrl,
+          ollamaModel,
+          locale
+        );
+
+        // POST to /api/brief with the pre-generated brief — server saves to Supabase only
+        const response = await fetch('/api/brief', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getHeaders(),
+            'x-locale': locale
+          },
+          body: JSON.stringify({
+            trendId: trend.id,
+            trendName: trend.name,
+            niche: trend.niche,
+            platform: trend.platform,
+            velocityScore: trend.velocity_score,
+            momentumStatus: trend.momentum_status,
+            preGenerated: true,
+            briefData: briefJson
+          })
+        });
+
+        const result = await response.json();
+        if (result.data?.id) {
+          const localizedPath = locale === 'en' ? `/brief/${result.data.id}` : `/${locale}/brief/${result.data.id}`;
+          router.push(localizedPath);
+        } else {
+          throw new Error(result.error || 'No brief ID returned');
+        }
       } else {
-        throw new Error('No brief ID returned');
+        // --- Non-Ollama providers: server-side generation (BYOK / Gemini) ---
+        const response = await fetch('/api/brief', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getHeaders(),
+            'x-locale': locale
+          },
+          body: JSON.stringify({
+            trendId: trend.id,
+            trendName: trend.name,
+            niche: trend.niche,
+            platform: trend.platform,
+            velocityScore: trend.velocity_score,
+            momentumStatus: trend.momentum_status
+          })
+        });
+        const result = await response.json();
+        if (result.data?.id) {
+          const localizedPath = locale === 'en' ? `/brief/${result.data.id}` : `/${locale}/brief/${result.data.id}`;
+          router.push(localizedPath);
+        } else {
+          throw new Error(result.error || 'No brief ID returned');
+        }
       }
     } catch (error) {
       console.error('Brief generation error:', error);

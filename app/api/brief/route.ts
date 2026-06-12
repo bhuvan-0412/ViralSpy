@@ -160,7 +160,7 @@ export async function POST(request: Request) {
   
   try {
     const body = await request.json();
-    const { trendId, userId, forceRegenerate } = body;
+    const { trendId, userId, forceRegenerate, preGenerated, briefData: preGeneratedBrief } = body;
     let trendName = body.trendName;
     let niche = body.niche;
     let platform = body.platform;
@@ -174,7 +174,8 @@ export async function POST(request: Request) {
       niche, 
       platform, 
       velocityScore, 
-      momentumStatus 
+      momentumStatus,
+      preGenerated: !!preGenerated
     });
 
     if (!trendId) {
@@ -236,37 +237,42 @@ export async function POST(request: Request) {
 
     let strategistBrief: any;
 
-    try {
-      const provider = (request.headers.get('x-ai-provider') 
-        || 'ollama') as 'ollama' | 'byok'
-      const byokProvider = (request.headers.get('x-byok-provider') 
-        || 'openai') as 'gemini' | 'openai' | 'custom'
-      const byokKey = request.headers.get('x-byok-key') || ''
-      const byokBaseUrl = request.headers.get('x-byok-base-url') 
-        || 'https://api.openai.com/v1'
-      const byokModel = request.headers.get('x-byok-model') || ''
-      const requestedOllamaUrl = request.headers.get('x-ollama-url') 
-        || 'http://localhost:11434'
-      const ollamaUrl = getOllamaUrl(requestedOllamaUrl)
-      const ollamaModel = request.headers.get('x-ollama-model') 
-        || 'llama3'
-      const lang = request.headers.get('x-locale') || 'en'
+    if (preGenerated && preGeneratedBrief) {
+      // Browser already called Ollama — use the pre-generated result directly
+      strategistBrief = preGeneratedBrief;
+    } else {
+      try {
+        const provider = (request.headers.get('x-ai-provider') 
+          || 'ollama') as 'ollama' | 'byok'
+        const byokProvider = (request.headers.get('x-byok-provider') 
+          || 'openai') as 'gemini' | 'openai' | 'custom'
+        const byokKey = request.headers.get('x-byok-key') || ''
+        const byokBaseUrl = request.headers.get('x-byok-base-url') 
+          || 'https://api.openai.com/v1'
+        const byokModel = request.headers.get('x-byok-model') || ''
+        const requestedOllamaUrl = request.headers.get('x-ollama-url') 
+          || 'http://localhost:11434'
+        const ollamaUrl = getOllamaUrl(requestedOllamaUrl)
+        const ollamaModel = request.headers.get('x-ollama-model') 
+          || 'llama3'
+        const lang = request.headers.get('x-locale') || 'en'
 
-      const briefResult = await generateBrief(
-        { trendName, niche, platform, velocityScore, momentumStatus },
-        provider,
-        { byokProvider, byokKey, byokBaseUrl, byokModel, ollamaUrl, ollamaModel, lang }
-      );
-      
-      if (briefResult && typeof briefResult === 'object' && 'hook' in briefResult) {
-        strategistBrief = briefResult as any;
-      } else {
-        throw new Error('Invalid AI response format');
+        const briefResult = await generateBrief(
+          { trendName, niche, platform, velocityScore, momentumStatus },
+          provider,
+          { byokProvider, byokKey, byokBaseUrl, byokModel, ollamaUrl, ollamaModel, lang }
+        );
+        
+        if (briefResult && typeof briefResult === 'object' && 'hook' in briefResult) {
+          strategistBrief = briefResult as any;
+        } else {
+          throw new Error('Invalid AI response format');
+        }
+      } catch (error: any) {
+        return Response.json({ 
+          error: error.message 
+        }, { status: 500 })
       }
-    } catch (error: any) {
-      return Response.json({ 
-        error: error.message 
-      }, { status: 500 })
     }
 
     const briefData = {
