@@ -3,27 +3,34 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/AuthProvider';
-import { signInWithGoogle, signInAsGuest, getUserProfile } from '../../lib/supabase';
+import { signInWithGoogle, supabase } from '../../lib/supabase';
 import { Sparkles, Eye, ArrowRight, Shield } from 'lucide-react';
 
 export default function EntryPage() {
   const router = useRouter();
-  const { user, loading, refreshUser } = useAuth();
+  const { loading, refreshUser } = useAuth();
 
   useEffect(() => {
-    if (!loading && user) {
-      checkProfileStatus();
-    }
-  }, [user, loading]);
+    if (supabase) {
+      // Check if already logged in
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          router.replace('/dashboard');
+        }
+      });
 
-  const checkProfileStatus = async () => {
-    const profile = await getUserProfile();
-    if (profile?.onboarded) {
-      router.replace('/dashboard');
-    } else {
-      router.replace('/onboarding');
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          if (event === 'SIGNED_IN' && session) {
+            router.replace('/dashboard');
+          }
+        }
+      );
+
+      return () => subscription.unsubscribe();
     }
-  };
+  }, [router]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -31,29 +38,6 @@ export default function EntryPage() {
       await refreshUser();
     } catch (err) {
       console.error('Google login error:', err);
-    }
-  };
-
-  const handleGuestLogin = async () => {
-    try {
-      await signInAsGuest();
-      
-      // Initialize local storage trends by seeding them
-      try {
-        const res = await fetch('/api/seed');
-        const seedRes = await res.json();
-        if (seedRes.success && seedRes.data) {
-          localStorage.setItem('viralspy_demo_trends', JSON.stringify(seedRes.data));
-        }
-      } catch (seedErr) {
-        console.warn('Seeding failed:', seedErr);
-      }
-
-      await refreshUser();
-      // Skip onboarding for guest demo terminal, go directly to dashboard
-      router.push('/dashboard');
-    } catch (err) {
-      console.error('Guest login error:', err);
     }
   };
 
@@ -119,16 +103,6 @@ export default function EntryPage() {
                 className="w-full flex items-center justify-center space-x-3 bg-[#1A1A1A] hover:bg-[#2C2C2C] text-white font-semibold rounded-2xl py-3.5 px-4 shadow-sm transition-transform duration-200 hover:scale-[1.02]"
               >
                 <span>Continue with Google</span>
-              </button>
-
-              {/* Guest login */}
-              <button
-                onClick={handleGuestLogin}
-                className="w-full flex items-center justify-center space-x-2 bg-white hover:bg-orange-50 text-[#FF6B4A] border border-[#FF6B4A] font-semibold text-sm py-3.5 px-4 rounded-2xl transition-transform duration-200 hover:scale-[1.02]"
-              >
-                <Sparkles className="h-4 w-4 text-[#FF6B4A] animate-pulse" />
-                <span>Explore Guest Terminal</span>
-                <ArrowRight className="h-4 w-4 ml-1" />
               </button>
             </div>
 

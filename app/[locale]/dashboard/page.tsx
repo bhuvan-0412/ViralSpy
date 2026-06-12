@@ -192,9 +192,11 @@ export default function DashboardPage() {
 
 
   const handleSignOut = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     await signOutUser();
-    await refreshUser();
-    router.push('/');
+    router.replace(getLocalizedPath('/'));
   };
 
   const getLocalizedPath = (path: string) => {
