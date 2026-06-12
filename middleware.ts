@@ -39,11 +39,9 @@ export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
   const cleanPath = pathname.replace(/^\/(en|hi|te)(\/|$)/, '/')
 
-  // Public routes — always accessible
-  const publicRoutes = ['/', '/auth/callback']
-  const isPublic = publicRoutes.some(route => 
-    cleanPath === route || 
-    cleanPath.startsWith('/auth')
+  const publicRoutes = ['/', '/auth', '/auth/callback']
+  const isPublic = publicRoutes.some(route =>
+    req.nextUrl.pathname.startsWith(route)
   )
 
   // If not logged in and trying to access protected route
