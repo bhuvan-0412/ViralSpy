@@ -3,9 +3,9 @@ import { useLocale } from 'next-intl'
 import { useRouter, usePathname } from 'next/navigation'
 
 const languages = [
-  { code: 'en', label: 'ENG', full: 'English' },
-  { code: 'hi', label: 'HIN', full: 'हिन्दी' },
-  { code: 'te', label: 'TEL', full: 'తెలుగు' }
+  { code: 'en', label: 'EN', full: 'English' },
+  { code: 'hi', label: 'हि', full: 'हिन्दी' },
+  { code: 'te', label: 'తె', full: 'తెలుగు' }
 ]
 
 export default function LanguageSwitcher() {
