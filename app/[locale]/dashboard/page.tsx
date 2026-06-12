@@ -106,24 +106,35 @@ export default function DashboardPage() {
     setIsPollLoading(true);
     const prevCount = trends.length;
     try {
-      await fetch('/api/poll');
-      const res = await fetch('/api/trends');
-      const data = await res.json();
-      if (data.success && data.data) {
-        setTrends(data.data);
-        const newCount = Math.max(0, data.data.length - prevCount);
-        const now = new Date();
-        setLastPolledAt(now);
-        setLastPolledLabel(computeLastPolledLabel(now));
-        // Show toast
-        if (toastTimer.current) clearTimeout(toastTimer.current);
-        setPollToast({ count: newCount });
-        toastTimer.current = setTimeout(() => setPollToast(null), 4000);
+      const pollRes = await fetch('/api/poll');
+      const pollData = await pollRes.json();
+
+      if (!pollData.success || (pollData.inserted === 0 && pollData.updated === 0)) {
+        // Fallback to seed if no live data
+        await fetch('/api/seed');
       }
-    } catch (err) {
-      console.error('Live poll failed:', err);
+    } catch {
+      await fetch('/api/seed');
     } finally {
-      setIsPollLoading(false);
+      try {
+        const res = await fetch('/api/trends');
+        const data = await res.json();
+        if (data.success && data.data) {
+          setTrends(data.data);
+          const newCount = Math.max(0, data.data.length - prevCount);
+          const now = new Date();
+          setLastPolledAt(now);
+          setLastPolledLabel(computeLastPolledLabel(now));
+          // Show toast
+          if (toastTimer.current) clearTimeout(toastTimer.current);
+          setPollToast({ count: newCount });
+          toastTimer.current = setTimeout(() => setPollToast(null), 4000);
+        }
+      } catch (err) {
+        console.error('Failed to load updated trends:', err);
+      } finally {
+        setIsPollLoading(false);
+      }
     }
   };
 
@@ -221,18 +232,19 @@ export default function DashboardPage() {
 
           {/* Logo Left */}
           <div className="flex items-center space-x-2.5">
-            <Logo />
+            <a href={getLocalizedPath('/dashboard')}>
+              <Logo />
+            </a>
           </div>
 
           {/* Nav Links Center */}
           <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold text-gray-655">
-            <a href="#" className="text-gray-500 hover:text-[#FF6B4A] transition-colors">{t('title')}</a>
-            <button onClick={() => router.push(getLocalizedPath('/dashboard'))} className="hover:text-[#FF6B4A] transition-colors">{tNav('briefs')}</button>
+            <button onClick={() => router.push(getLocalizedPath('/dashboard'))} className="text-gray-500 hover:text-[#FF6B4A] transition-colors">{t('title')}</button>
+            <button onClick={() => router.push(getLocalizedPath('/briefs'))} className="hover:text-[#FF6B4A] transition-colors">{tNav('briefs')}</button>
             <button onClick={() => router.push(getLocalizedPath('/feedback'))} className="hover:text-[#FF6B4A] transition-colors flex items-center gap-1.5">
               <MessageSquare className="h-4 w-4" />
               <span>{tNav('feedback')}</span>
             </button>
-            <button onClick={() => router.push(getLocalizedPath('/settings'))} className="hover:text-[#FF6B4A] transition-colors">{tNav('settings')}</button>
           </nav>
 
           {/* Avatar / Switcher / Settings / SignOut Right */}

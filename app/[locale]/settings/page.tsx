@@ -387,7 +387,7 @@ export default function SettingsPage() {
         </section>
 
         {/* SECTION 2: AI Provider */}
-        <section className="bg-white border border-gray-200 rounded-2xl p-6 shadow-card space-y-6">
+        <section id="ai-provider" className="bg-white border border-gray-200 rounded-2xl p-6 shadow-card space-y-6">
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center space-x-2">
               <Cpu className="h-4 w-4 text-[#FF6B4A]" />

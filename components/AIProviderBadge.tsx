@@ -3,9 +3,11 @@
 import React, { useState } from 'react';
 import { useAIProvider } from '../hooks/useAIProvider';
 import { Check } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import ProviderSetupGuide, { GuideProvider } from './ProviderSetupGuide';
 
 export default function AIProviderBadge() {
+  const locale = useLocale();
   const { config, saveConfig } = useAIProvider();
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -60,15 +62,19 @@ export default function AIProviderBadge() {
     return config.provider === 'ollama' ? 'ollama' : 'byok';
   };
 
+  const getLocalizedSettingsPath = () => {
+    return locale === 'en' ? '/settings#ai-provider' : `/${locale}/settings#ai-provider`;
+  };
+
   return (
     <div className="relative inline-block">
       {/* Active provider pill */}
-      <button
-        onClick={() => setIsGuideOpen(true)}
+      <a
+        href={getLocalizedSettingsPath()}
         className="bg-gray-100 hover:bg-gray-200 rounded-full px-3.5 py-1 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-gray-150 focus:outline-none focus:ring-1 focus:ring-[#FF6B4A]"
       >
         {getPillLabel()}
-      </button>
+      </a>
 
       {/* Provider Setup Guide Modal */}
       <ProviderSetupGuide
