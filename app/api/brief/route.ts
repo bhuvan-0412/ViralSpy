@@ -136,8 +136,12 @@ export async function GET(request: Request) {
       };
       return NextResponse.json({ success: true, data: formatted });
     }
-  } catch (err: any) {
-    console.error('Error fetching brief from DB:', err.message);
+  } catch (e: any) {
+    console.error('Brief error:', e)
+    return Response.json({ 
+      error: e.message,
+      stack: e.stack?.split('\n').slice(0,3).join(' | ')
+    }, { status: 500 })
   }
 
   // Fallback to local brief
@@ -163,6 +167,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { trendId, userId, forceRegenerate, preGenerated, briefData: preGeneratedBrief } = body;
     let trendName = body.trendName;
+    console.log('Brief API called with:', { trendId, trendName })
     let niche = body.niche;
     let platform = body.platform;
     let velocityScore = body.velocityScore;
@@ -275,9 +280,11 @@ export async function POST(request: Request) {
         } else {
           throw new Error('Invalid AI response format');
         }
-      } catch (error: any) {
+      } catch (e: any) {
+        console.error('Brief error:', e)
         return Response.json({ 
-          error: error.message 
+          error: e.message,
+          stack: e.stack?.split('\n').slice(0,3).join(' | ')
         }, { status: 500 })
       }
     }
@@ -337,8 +344,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: false, error: 'Failed to return inserted brief.' }, { status: 500 });
 
-  } catch (err: any) {
-    console.error('Error in POST briefs API:', err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (e: any) {
+    console.error('Brief error:', e)
+    return Response.json({ 
+      error: e.message,
+      stack: e.stack?.split('\n').slice(0,3).join(' | ')
+    }, { status: 500 })
   }
 }
