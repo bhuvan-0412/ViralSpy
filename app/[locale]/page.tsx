@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/AuthProvider';
-import { signInWithGoogle, supabase } from '../../lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { Sparkles, Eye, ArrowRight, Shield } from 'lucide-react';
 
 export default function EntryPage() {
@@ -33,13 +33,26 @@ export default function EntryPage() {
   }, [router]);
 
   const handleGoogleLogin = async () => {
+    console.log('Google login clicked')
     try {
-      await signInWithGoogle();
-      await refreshUser();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      })
+      if (error) {
+        console.error('OAuth error:', error.message)
+        alert(`Login error: ${error.message}`)
+      }
     } catch (err) {
-      console.error('Google login error:', err);
+      console.error('Unexpected error:', err)
     }
-  };
+  }
 
   if (loading) {
     return (
