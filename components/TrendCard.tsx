@@ -6,10 +6,13 @@ import MomentumBadge from './MomentumBadge';
 import Sparkline from './Sparkline';
 import { useTranslations } from 'next-intl';
 import { formatIndianNumber, formatIST } from '../lib/format';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { useAIProvider } from '../hooks/useAIProvider';
 
 interface TrendCardProps {
   trend: Trend;
-  onGenerateBrief: (trendId: string, trendName: string, niche: string, platform: string, velocityScore: number, momentumStatus: string) => void;
+  onGenerateBrief?: (trendId: string, trendName: string, niche: string, platform: string, velocityScore: number, momentumStatus: string) => void;
   isGenerating?: boolean;
 }
 
@@ -61,7 +64,47 @@ const PlatformIcon = ({ platform }: { platform: string }) => {
   }
 };
 
-export default function TrendCard({ trend, onGenerateBrief, isGenerating = false }: TrendCardProps) {
+export default function TrendCard({ trend, onGenerateBrief, isGenerating: propIsGenerating = false }: TrendCardProps) {
+  const router = useRouter();
+  const locale = useLocale();
+  const { getHeaders } = useAIProvider();
+  
+  const [localIsGenerating, setLocalIsGenerating] = useState(false);
+  const isGenerating = propIsGenerating || localIsGenerating;
+  
+  const handleGenerateBrief = async () => {
+    setLocalIsGenerating(true);
+    try {
+      const response = await fetch('/api/brief', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getHeaders(),
+          'x-locale': locale
+        },
+        body: JSON.stringify({
+          trendId: trend.id,
+          trendName: trend.name,
+          niche: trend.niche,
+          platform: trend.platform,
+          velocityScore: trend.velocity_score,
+          momentumStatus: trend.momentum_status
+        })
+      });
+      const result = await response.json();
+      if (result.data?.id) {
+        const localizedPath = locale === 'en' ? `/brief/${result.data.id}` : `/${locale}/brief/${result.data.id}`;
+        router.push(localizedPath);
+      } else {
+        throw new Error('No brief ID returned');
+      }
+    } catch (error) {
+      console.error('Brief generation error:', error);
+      alert('Could not generate brief. Please try again.');
+    } finally {
+      setLocalIsGenerating(false);
+    }
+  };
   const t = useTranslations('trendCard');
   const isExploding = trend.momentum_status === 'EXPLODING';
   
@@ -152,13 +195,34 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating = false
           {t('detectedAt')} {formatIST(trend.detected_at)}
         </span>
         <button
-          onClick={() => onGenerateBrief(trend.id, trend.name, trend.niche, trend.platform, trend.velocity_score, trend.momentum_status)}
+          onClick={handleGenerateBrief}
           disabled={isGenerating}
-          className={`bg-[#FF6B4A] text-white font-semibold text-xs tracking-wider rounded-full px-4.5 py-2 hover:scale-[1.02] transition-all disabled:opacity-85 disabled:pointer-events-none ${
-            isGenerating ? 'animate-shimmer' : ''
-          }`}
+          className={`
+            flex items-center gap-2 px-4 py-2 rounded-full
+            text-sm font-semibold transition-all duration-200
+            ${isGenerating 
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-[#FF6B4A] text-white hover:bg-[#e55a3a] hover:scale-[1.03] active:scale-95 shadow-sm hover:shadow-md'
+            }
+          `}
         >
-          {isGenerating ? 'Strategizing...' : `${t('generateBrief')} →`}
+          {isGenerating ? (
+            <>
+              <svg className="animate-spin h-3.5 w-3.5" 
+                viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" 
+                  r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+              <span>Generating...</span>
+            </>
+          ) : (
+            <>
+              <span>Generate Brief</span>
+              <span className="text-xs opacity-80">→</span>
+            </>
+          )}
         </button>
       </div>
 

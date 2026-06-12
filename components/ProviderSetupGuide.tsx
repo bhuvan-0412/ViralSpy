@@ -16,7 +16,7 @@ import {
   AlertTriangle 
 } from 'lucide-react';
 
-export type GuideProvider = 'gemini' | 'openai' | 'ollama' | 'byok';
+export type GuideProvider = 'ollama' | 'byok';
 
 interface ProviderSetupGuideProps {
   provider: GuideProvider;
@@ -24,20 +24,79 @@ interface ProviderSetupGuideProps {
   onClose: () => void;
   onComplete: (config: {
     provider: GuideProvider;
+    byokProvider?: 'gemini' | 'openai' | 'custom';
     byokKey?: string;
-    byokProvider?: 'gemini' | 'openai';
-    openaiKey?: string;
+    byokBaseUrl?: string;
+    byokModel?: string;
     ollamaUrl?: string;
     ollamaModel?: string;
   }) => void;
   initialConfig?: {
+    byokProvider?: 'gemini' | 'openai' | 'custom';
     byokKey?: string;
-    byokProvider?: 'gemini' | 'openai';
-    openaiKey?: string;
+    byokBaseUrl?: string;
+    byokModel?: string;
     ollamaUrl?: string;
     ollamaModel?: string;
   };
 }
+
+const PRESETS = [
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'gpt-4o',
+    badge: 'Pay per use',
+    link: 'https://platform.openai.com/api-keys',
+    color: 'bg-green-500'
+  },
+  {
+    id: 'gemini',
+    name: 'Gemini',
+    baseUrl: '',
+    model: 'gemini-2.0-flash',
+    badge: 'Free Tier',
+    link: 'https://aistudio.google.com/app/apikey',
+    color: 'bg-blue-500'
+  },
+  {
+    id: 'groq',
+    name: 'Groq',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    model: 'llama-3.3-70b-versatile',
+    badge: 'Free Tier',
+    link: 'https://console.groq.com/keys',
+    color: 'bg-orange-500'
+  },
+  {
+    id: 'together',
+    name: 'Together AI',
+    baseUrl: 'https://api.together.xyz/v1',
+    model: 'meta-llama/Llama-3-70b-chat-hf',
+    badge: 'Pay per use',
+    link: 'https://api.together.xyz/settings/api-keys',
+    color: 'bg-cyan-500'
+  },
+  {
+    id: 'mistral',
+    name: 'Mistral',
+    baseUrl: 'https://api.mistral.ai/v1',
+    model: 'mistral-large-latest',
+    badge: 'Pay per use',
+    link: 'https://console.mistral.ai/api-keys',
+    color: 'bg-red-500'
+  },
+  {
+    id: 'custom',
+    name: 'Custom',
+    baseUrl: '',
+    model: '',
+    badge: 'Any provider',
+    link: '',
+    color: 'bg-gray-500'
+  }
+];
 
 const MODELS = [
   {
@@ -88,10 +147,12 @@ export default function ProviderSetupGuide({
 
   // Input States
   const [ollamaUrl, setOllamaUrl] = useState(initialConfig?.ollamaUrl || 'http://localhost:11434');
-  const [selectedModel, setSelectedModel] = useState('llama3');
-  const [openaiKey, setOpenaiKey] = useState(initialConfig?.openaiKey || '');
-  const [byokProvider, setByokProvider] = useState<'gemini' | 'openai'>(initialConfig?.byokProvider || 'gemini');
+  const [selectedModel, setSelectedModel] = useState(initialConfig?.ollamaModel || 'llama3');
+  const [byokProvider, setByokProvider] = useState<'gemini' | 'openai' | 'custom'>(initialConfig?.byokProvider || 'openai');
   const [byokKey, setByokKey] = useState(initialConfig?.byokKey || '');
+  const [byokBaseUrl, setByokBaseUrl] = useState(initialConfig?.byokBaseUrl || 'https://api.openai.com/v1');
+  const [byokModel, setByokModel] = useState(initialConfig?.byokModel || 'gpt-4o');
+  const [selectedPreset, setSelectedPreset] = useState<string>('openai');
 
   // UI States
   const [showKey, setShowKey] = useState(false);
@@ -105,16 +166,35 @@ export default function ProviderSetupGuide({
     troubleshoot?: string[];
   } | null>(null);
 
-  // Set default tab when provider changes
+  // Set default tab and preset when provider/config changes
   useEffect(() => {
     setActiveTab('guide');
     setTestResult(null);
-    if (provider === 'openai') {
-      setByokProvider('openai');
-    } else if (provider === 'byok') {
-      setByokProvider(initialConfig?.byokProvider || 'gemini');
+    if (isOpen) {
+      setOllamaUrl(initialConfig?.ollamaUrl || 'http://localhost:11434');
+      setSelectedModel(initialConfig?.ollamaModel || 'llama3');
+      
+      const currentProvider = initialConfig?.byokProvider || 'openai';
+      setByokProvider(currentProvider);
+      setByokKey(initialConfig?.byokKey || '');
+      
+      const baseUrl = initialConfig?.byokBaseUrl || 'https://api.openai.com/v1';
+      const model = initialConfig?.byokModel || 'gpt-4o';
+      setByokBaseUrl(baseUrl);
+      setByokModel(model);
+
+      const matched = PRESETS.find(
+        p => p.baseUrl === baseUrl && p.model === model && (p.id === 'gemini' ? currentProvider === 'gemini' : currentProvider === 'openai')
+      );
+      if (matched) {
+        setSelectedPreset(matched.id);
+      } else if (currentProvider === 'gemini') {
+        setSelectedPreset('gemini');
+      } else {
+        setSelectedPreset('custom');
+      }
     }
-  }, [provider, initialConfig]);
+  }, [provider, initialConfig, isOpen]);
 
   if (!isOpen) return null;
 
@@ -122,6 +202,19 @@ export default function ProviderSetupGuide({
     navigator.clipboard.writeText(text);
     setCopiedText(id);
     setTimeout(() => setCopiedText(null), 2000);
+  };
+
+  const handleSelectPreset = (preset: typeof PRESETS[number]) => {
+    setSelectedPreset(preset.id);
+    if (preset.id === 'gemini') {
+      setByokProvider('gemini');
+    } else if (preset.id === 'custom') {
+      setByokProvider('custom');
+    } else {
+      setByokProvider('openai');
+    }
+    setByokBaseUrl(preset.baseUrl);
+    setByokModel(preset.model);
   };
 
   // Run Test Connection
@@ -162,11 +255,8 @@ export default function ProviderSetupGuide({
         setTesting(false);
       }
     } else {
-      // BYOK / OpenAI key testing
-      const testKey = provider === 'openai' ? openaiKey : byokKey;
-      const testProv = provider === 'openai' ? 'openai' : byokProvider;
-
-      if (!testKey) {
+      // BYOK key testing
+      if (!byokKey) {
         setTestResult({
           success: false,
           message: '✗ Please enter an API key to test.'
@@ -179,13 +269,18 @@ export default function ProviderSetupGuide({
         const res = await fetch('/api/test-key', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key: testKey, provider: testProv })
+          body: JSON.stringify({
+            key: byokKey,
+            provider: byokProvider,
+            baseUrl: byokBaseUrl,
+            model: byokModel
+          })
         });
         const data = await res.json();
         if (data.valid) {
           setTestResult({
             success: true,
-            message: `✓ Valid key — ${testProv === 'gemini' ? 'Gemini Flash' : 'GPT-4o'} ready`
+            message: `✓ Valid key — ${byokProvider === 'gemini' ? 'Gemini Flash' : byokModel || 'GPT-4o'} ready`
           });
         } else {
           setTestResult({
@@ -205,14 +300,7 @@ export default function ProviderSetupGuide({
   };
 
   const handleDone = () => {
-    if (provider === 'gemini') {
-      onComplete({ provider: 'gemini' });
-    } else if (provider === 'openai') {
-      onComplete({
-        provider: 'openai',
-        openaiKey
-      });
-    } else if (provider === 'ollama') {
+    if (provider === 'ollama') {
       onComplete({
         provider: 'ollama',
         ollamaUrl,
@@ -222,7 +310,9 @@ export default function ProviderSetupGuide({
       onComplete({
         provider: 'byok',
         byokProvider,
-        byokKey
+        byokKey,
+        byokBaseUrl,
+        byokModel
       });
     }
     onClose();
@@ -230,43 +320,31 @@ export default function ProviderSetupGuide({
 
   const renderIcon = () => {
     switch (provider) {
-      case 'openai':
-        return <span className="h-6 w-6 rounded-full bg-gray-900 flex items-center justify-center text-xs text-white font-bold">O</span>;
-      case 'ollama':
-        return <span className="text-xl">🦙</span>;
       case 'byok':
         return <Key className="h-5 w-5 text-amber-500" />;
-      case 'gemini':
+      case 'ollama':
       default:
-        return <span className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-400 to-green-400 flex items-center justify-center text-xs text-white font-bold">G</span>;
+        return <span className="text-xl">🦙</span>;
     }
   };
 
   const getTitle = () => {
     switch (provider) {
-      case 'openai':
-        return 'Set up OpenAI GPT-4o';
-      case 'ollama':
-        return 'Set up Local AI with Ollama';
       case 'byok':
         return 'Use Your Own API Key';
-      case 'gemini':
+      case 'ollama':
       default:
-        return 'Using Gemini (Default)';
+        return 'Set up Local AI with Ollama';
     }
   };
 
   const getSubtitle = () => {
     switch (provider) {
-      case 'openai':
-        return 'Premium strategic content briefs with GPT-4o';
-      case 'ollama':
-        return 'Free, private, runs on your machine';
       case 'byok':
         return 'Full control. Your billing. Your usage.';
-      case 'gemini':
+      case 'ollama':
       default:
-        return 'Uses ViralSpy\'s API key — no setup needed';
+        return 'Free, private, runs on your machine';
     }
   };
 
@@ -293,86 +371,47 @@ export default function ProviderSetupGuide({
         </div>
 
         {/* Tab Headers */}
-        {provider !== 'gemini' && (
-          <div className="flex bg-gray-50/50 border-b border-gray-100 px-5">
+        <div className="flex bg-gray-50/50 border-b border-gray-100 px-5">
+          <button
+            onClick={() => setActiveTab('guide')}
+            className={`py-3 px-4 text-xs font-bold transition-all border-b-2 -mb-[1px] ${
+              activeTab === 'guide'
+                ? 'border-[#FF6B4A] text-[#FF6B4A]'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Setup Guide
+          </button>
+          <button
+            onClick={() => setActiveTab('test')}
+            className={`py-3 px-4 text-xs font-bold transition-all border-b-2 -mb-[1px] ${
+              activeTab === 'test'
+                ? 'border-[#FF6B4A] text-[#FF6B4A]'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Test Connection
+          </button>
+          {provider === 'ollama' && (
             <button
-              onClick={() => setActiveTab('guide')}
+              onClick={() => setActiveTab('requirements')}
               className={`py-3 px-4 text-xs font-bold transition-all border-b-2 -mb-[1px] ${
-                activeTab === 'guide'
+                activeTab === 'requirements'
                   ? 'border-[#FF6B4A] text-[#FF6B4A]'
                   : 'border-transparent text-gray-500 hover:text-gray-800'
               }`}
             >
-              Setup Guide
+              System Requirements
             </button>
-            <button
-              onClick={() => setActiveTab('test')}
-              className={`py-3 px-4 text-xs font-bold transition-all border-b-2 -mb-[1px] ${
-                activeTab === 'test'
-                  ? 'border-[#FF6B4A] text-[#FF6B4A]'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              Test Connection
-            </button>
-            {provider === 'ollama' && (
-              <button
-                onClick={() => setActiveTab('requirements')}
-                className={`py-3 px-4 text-xs font-bold transition-all border-b-2 -mb-[1px] ${
-                  activeTab === 'requirements'
-                    ? 'border-[#FF6B4A] text-[#FF6B4A]'
-                    : 'border-transparent text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                System Requirements
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Modal Scrollable Body */}
         <div className="flex-grow p-5 overflow-y-auto max-h-[50vh] text-xs text-gray-700 space-y-4">
           
-          {/* 1. GEMINI DEFAULT SCREEN */}
-          {provider === 'gemini' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-green-50 border border-green-150 rounded-2xl flex items-start space-x-3">
-                <div className="bg-green-500 text-white rounded-full p-1 mt-0.5">
-                  <Check className="h-3.5 w-3.5" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-green-800 text-sm">No setup required</h4>
-                  <p className="text-green-700 mt-1 leading-relaxed">
-                    ViralSpy handles brief generation out of the box using our integrated Gemini API key. There is no config or API cost for standard usage.
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-orange-50/20 border border-orange-100 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Info className="h-4 w-4 text-[#FF6B4A]" />
-                  <span className="font-bold text-gray-800">Usage Note</span>
-                </div>
-                <p className="leading-relaxed text-gray-600">
-                  If you plan to generate large volumes of briefs daily, we highly recommend switching to **BYOK (Bring Your Own Key)** with a free developer key from Google for higher limits.
-                </p>
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-1 text-xs font-bold text-[#FF6B4A] hover:underline"
-                >
-                  <span>Get a free Gemini developer key</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            </div>
-          )}
-
-          {/* 2. OLLAMA SCREEN */}
+          {/* OLLAMA SCREEN */}
           {provider === 'ollama' && activeTab === 'guide' && (
             <div className="space-y-5">
-              
               {/* Step 1 */}
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
@@ -419,7 +458,7 @@ export default function ProviderSetupGuide({
                   <span>ollama serve</span>
                   <button
                     onClick={() => handleCopy('ollama serve', 'serve')}
-                    className="text-gray-400 hover:text-gray-600 transition-colors p-1 bg-white border border-gray-150 rounded-lg"
+                    className="text-gray-400 hover:text-gray-650 transition-colors p-1 bg-white border border-gray-150 rounded-lg"
                   >
                     {copiedText === 'serve' ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
                   </button>
@@ -471,7 +510,7 @@ export default function ProviderSetupGuide({
                   <span>ollama pull {selectedModel}</span>
                   <button
                     onClick={() => handleCopy(`ollama pull ${selectedModel}`, 'pull')}
-                    className="text-gray-400 hover:text-gray-600 transition-colors p-1 bg-white border border-gray-150 rounded-lg"
+                    className="text-gray-400 hover:text-gray-650 transition-colors p-1 bg-white border border-gray-150 rounded-lg"
                   >
                     {copiedText === 'pull' ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
                   </button>
@@ -506,7 +545,6 @@ export default function ProviderSetupGuide({
                   </div>
                 </div>
               </div>
-
             </div>
           )}
 
@@ -557,143 +595,113 @@ export default function ProviderSetupGuide({
             </div>
           )}
 
-          {/* 3. BYOK / OPENAI SCREEN */}
-          {(provider === 'byok' || provider === 'openai') && activeTab === 'guide' && (
+          {/* BYOK SCREEN */}
+          {provider === 'byok' && activeTab === 'guide' && (
             <div className="space-y-5">
               
-              {/* If it's BYOK, show provider selector toggle */}
-              {provider === 'byok' && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">BYOK API Credentials</label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setByokProvider('gemini')}
-                      className={`flex-grow py-2 text-xs font-bold rounded-xl border text-center transition-all ${
-                        byokProvider === 'gemini'
-                          ? 'border-[#FF6B4A] bg-[#FF6B4A] text-white'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                      }`}
-                    >
-                      Gemini Key
-                    </button>
-                    <button
-                      onClick={() => setByokProvider('openai')}
-                      className={`flex-grow py-2 text-xs font-bold rounded-xl border text-center transition-all ${
-                        byokProvider === 'openai'
-                          ? 'border-[#FF6B4A] bg-[#FF6B4A] text-white'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                      }`}
-                    >
-                      OpenAI Key
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Render Steps based on chosen provider */}
-              {((provider === 'byok' && byokProvider === 'gemini')) && (
-                <div className="space-y-4">
-                  {/* Step 1 */}
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="h-5 w-5 bg-orange-150 text-[#FF6B4A] rounded-full flex items-center justify-center font-bold text-[10px]">1</span>
-                      <span className="font-bold text-gray-800 text-sm">Get a free Gemini API key</span>
-                    </div>
-                    <p className="text-gray-500 text-[11px] leading-relaxed">Head to Google AI Studio to generate your API key credentials:</p>
-                    <a
-                      href="https://aistudio.google.com/app/apikey"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-250 text-gray-700 rounded-xl font-bold transition-all text-xs"
-                    >
-                      <span>Open Google AI Studio</span>
-                      <ExternalLink className="h-3.5 w-3.5 text-gray-500" />
-                    </a>
-                    <div className="text-[10px] text-gray-450 italic mt-1.5 block">
-                      ℹ️ Free tier limit: 15 requests/minute, 1,500 requests/day — plenty for daily briefs.
-                    </div>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="h-5 w-5 bg-orange-150 text-[#FF6B4A] rounded-full flex items-center justify-center font-bold text-[10px]">2</span>
-                      <span className="font-bold text-gray-800 text-sm">Paste your key below</span>
-                    </div>
-                    <div className="relative pt-1">
-                      <input
-                        type={showKey ? 'text' : 'password'}
-                        value={byokKey}
-                        onChange={(e) => setByokKey(e.target.value)}
-                        className="w-full text-xs font-semibold pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#FF6B4A]"
-                        placeholder="AIzaSy..."
-                      />
+              {/* Presets Horizontal Scroll */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Select Provider</label>
+                <div className="flex space-x-2.5 overflow-x-auto pb-2 pt-1 scrollbar-thin">
+                  {PRESETS.map((p) => {
+                    const isSelected = selectedPreset === p.id;
+                    return (
                       <button
+                        key={p.id}
                         type="button"
-                        onClick={() => setShowKey(!showKey)}
-                        className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-700"
-                      >
-                        {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {((provider === 'byok' && byokProvider === 'openai') || provider === 'openai') && (
-                <div className="space-y-4">
-                  {/* Step 1 */}
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="h-5 w-5 bg-orange-150 text-[#FF6B4A] rounded-full flex items-center justify-center font-bold text-[10px]">1</span>
-                      <span className="font-bold text-gray-800 text-sm">Get an OpenAI API key</span>
-                    </div>
-                    <p className="text-gray-500 text-[11px] leading-relaxed">Go to the OpenAI Platform key manager to generate a key:</p>
-                    <a
-                      href="https://platform.openai.com/api-keys"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-250 text-gray-700 rounded-xl font-bold transition-all text-xs"
-                    >
-                      <span>Open OpenAI Platform</span>
-                      <ExternalLink className="h-3.5 w-3.5 text-gray-500" />
-                    </a>
-                    <div className="text-[10px] text-gray-450 italic mt-1.5 block">
-                      ℹ️ GPT-4o cost is roughly $0.01 per brief generation. A $5 credit allows ~500 briefs.
-                    </div>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="h-5 w-5 bg-orange-150 text-[#FF6B4A] rounded-full flex items-center justify-center font-bold text-[10px]">2</span>
-                      <span className="font-bold text-gray-800 text-sm">Paste your key below</span>
-                    </div>
-                    <div className="relative pt-1">
-                      <input
-                        type={showKey ? 'text' : 'password'}
-                        value={provider === 'openai' ? openaiKey : byokKey}
-                        onChange={(e) => {
-                          if (provider === 'openai') {
-                            setOpenaiKey(e.target.value);
-                          } else {
-                            setByokKey(e.target.value);
-                          }
+                        onClick={() => {
+                          handleSelectPreset(p);
                         }}
-                        className="w-full text-xs font-semibold pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#FF6B4A]"
-                        placeholder="sk-proj-..."
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowKey(!showKey)}
-                        className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-700"
+                        className={`min-w-[130px] p-3 rounded-xl border text-left flex flex-col justify-between h-24 relative transition-all shrink-0 ${
+                          isSelected
+                            ? 'border-[#FF6B4A] bg-orange-50/15 ring-1 ring-[#FF6B4A]'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
                       >
-                        {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <div className="flex items-center space-x-1.5">
+                          <span className={`h-2.5 w-2.5 rounded-full ${p.color}`} />
+                          <span className="font-bold text-gray-800 text-[11px] leading-tight block">{p.name}</span>
+                        </div>
+                        <div>
+                          <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-extrabold uppercase ${
+                            p.badge === 'Free Tier' 
+                              ? 'bg-green-100 text-green-700' 
+                              : p.badge === 'Pay per use'
+                                ? 'bg-blue-50 text-blue-600'
+                                : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {p.badge}
+                          </span>
+                        </div>
                       </button>
-                    </div>
-                  </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* API Link if present */}
+              {PRESETS.find(p => p.id === selectedPreset)?.link && (
+                <a
+                  href={PRESETS.find(p => p.id === selectedPreset)?.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#FF6B4A] hover:underline font-bold inline-flex items-center gap-1"
+                >
+                  <span>Get API key →</span>
+                </a>
+              )}
+
+              {/* API Key input */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">API Key</label>
+                <div className="relative">
+                  <input
+                    type={showKey ? 'text' : 'password'}
+                    value={byokKey}
+                    onChange={(e) => setByokKey(e.target.value)}
+                    className="w-full text-xs font-semibold pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#FF6B4A]"
+                    placeholder="Paste your API key here"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKey(!showKey)}
+                    className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-700"
+                  >
+                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Base URL input (shown only for Custom) */}
+              {selectedPreset === 'custom' && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Base URL</label>
+                  <input
+                    type="text"
+                    value={byokBaseUrl}
+                    onChange={(e) => setByokBaseUrl(e.target.value)}
+                    className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#FF6B4A]"
+                    placeholder="https://api.yourprovider.com/v1"
+                  />
                 </div>
               )}
+
+              {/* Model input */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Model Name</label>
+                <input
+                  type="text"
+                  value={byokModel}
+                  onChange={(e) => setByokModel(e.target.value)}
+                  disabled={selectedPreset !== 'custom'}
+                  className={`w-full text-xs font-semibold px-3 py-2.5 rounded-xl border focus:outline-none focus:border-[#FF6B4A] ${
+                    selectedPreset !== 'custom' 
+                      ? 'bg-gray-50 text-gray-500 cursor-not-allowed border-gray-200' 
+                      : 'bg-white border-gray-200'
+                  }`}
+                  placeholder={selectedPreset === 'custom' ? 'e.g., meta-llama/Llama-3' : ''}
+                />
+              </div>
 
               {/* Security note */}
               <div className="bg-amber-50/30 border border-amber-100 text-amber-800 p-4 rounded-2xl flex items-start space-x-2.5 leading-relaxed">
@@ -703,12 +711,11 @@ export default function ProviderSetupGuide({
                   Your API keys are stored only in your browser's local cache. They are dispatched straight to the official model provider gateways and never saved on ViralSpy servers.
                 </div>
               </div>
-
             </div>
           )}
 
           {/* TEST CONNECTION TAB FOR ALL APIS */}
-          {provider !== 'gemini' && activeTab === 'test' && (
+          {activeTab === 'test' && (
             <div className="space-y-4">
               <p className="text-gray-500 text-[11px] leading-relaxed">
                 Validate that your setup credentials can talk to the model server successfully:

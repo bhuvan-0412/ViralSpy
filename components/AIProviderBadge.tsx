@@ -20,13 +20,11 @@ export default function AIProviderBadge() {
     }
 
     const labels: Record<string, string> = {
-      gemini: 'Gemini',
-      openai: 'GPT-4o',
       ollama: 'Local AI',
-      byok: 'BYOK Key'
+      byok: newConfig.byokProvider === 'gemini' ? 'Gemini' : newConfig.byokProvider === 'custom' ? 'Custom API' : newConfig.byokModel === 'llama-3.3-70b-versatile' ? 'Groq' : 'GPT-4o'
     };
 
-    setToast(`Updated ${labels[newConfig.provider]}`);
+    setToast(`Updated to ${labels[newConfig.provider] || 'Local AI'}`);
     setIsGuideOpen(false);
 
     // Reload page to re-initialize client clients
@@ -37,28 +35,29 @@ export default function AIProviderBadge() {
   };
 
   const getPillLabel = () => {
-    switch (config.provider) {
-      case 'openai':
-        return <span className="text-gray-900 font-bold flex items-center gap-1">🤖 GPT-4o</span>;
-      case 'ollama':
-        return <span className="text-green-655 font-bold flex items-center gap-1">🦙 Local</span>;
-      case 'byok':
-        return <span className="text-amber-600 font-bold flex items-center gap-1">🔑 My Key</span>;
-      case 'gemini':
-      default:
-        return (
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-emerald-500 font-bold flex items-center gap-1">
-            🤖 Gemini
-          </span>
-        );
+    if (config.provider === 'ollama') {
+      return <span className="text-green-655 font-bold flex items-center gap-1">🦙 Local AI</span>;
     }
+    
+    // BYOK cases
+    const modelName = config.byokModel;
+    if (config.byokProvider === 'gemini') {
+      return <span className="text-blue-500 font-bold flex items-center gap-1">🔑 Gemini</span>;
+    }
+    if (config.byokProvider === 'custom') {
+      return <span className="text-gray-500 font-bold flex items-center gap-1">🔑 Custom API</span>;
+    }
+    if (modelName === 'llama-3.3-70b-versatile') {
+      return <span className="text-purple-650 font-bold flex items-center gap-1">🔑 Groq</span>;
+    }
+    if (modelName === 'gpt-4o') {
+      return <span className="text-gray-900 font-bold flex items-center gap-1">🔑 GPT-4o</span>;
+    }
+    return <span className="text-amber-600 font-bold flex items-center gap-1">🔑 My Key</span>;
   };
 
   const getGuideProviderMapping = (): GuideProvider => {
-    if (config.provider === 'openai') return 'openai';
-    if (config.provider === 'ollama') return 'ollama';
-    if (config.provider === 'byok') return 'byok';
-    return 'gemini';
+    return config.provider === 'ollama' ? 'ollama' : 'byok';
   };
 
   return (
@@ -80,7 +79,8 @@ export default function AIProviderBadge() {
         initialConfig={{
           byokKey: config.byokKey,
           byokProvider: config.byokProvider,
-          openaiKey: config.provider === 'openai' ? config.byokKey : undefined, // OpenAI falls back to byokKey in hooks
+          byokBaseUrl: config.byokBaseUrl,
+          byokModel: config.byokModel,
           ollamaUrl: config.ollamaUrl,
           ollamaModel: config.ollamaModel
         }}

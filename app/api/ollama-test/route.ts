@@ -1,6 +1,9 @@
+import { getOllamaUrl } from '../../../lib/wsl-detect';
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const url = searchParams.get('url') || 'http://localhost:11434'
+  const requestedUrl = searchParams.get('url') || 'http://localhost:11434'
+  const url = getOllamaUrl(requestedUrl)
   const model = searchParams.get('model') || 'llama3'
   
   try {

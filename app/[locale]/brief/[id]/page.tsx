@@ -70,12 +70,10 @@ export default function BriefPage() {
   };
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/');
-    } else if (user && id) {
+    if (id) {
       loadBriefData();
     }
-  }, [user, loading, id, router]);
+  }, [id]);
 
   // Progress Bar Animation (0% to 90% over 8 seconds, 100% when loaded)
   useEffect(() => {
@@ -198,15 +196,18 @@ export default function BriefPage() {
               VIRALSPY // ERROR
             </header>
             <main className="max-w-md mx-auto text-center space-y-6 py-12">
-              <div className="p-4 bg-red-50 border border-red-200 text-red-655 text-xs font-semibold rounded-2xl">
-                {error || 'The requested content strategy brief could not be located.'}
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-card max-w-sm mx-auto space-y-4">
+                <h3 className="text-lg font-bold text-[#1A1A1A]">Brief not found</h3>
+                <p className="text-xs text-gray-500">
+                  {error || 'The requested content strategy brief could not be located.'}
+                </p>
+                <button
+                  onClick={() => router.push(localizedDashboardPath)}
+                  className="px-4 py-2 bg-[#FF6B4A] hover:bg-[#e55a3a] text-white rounded-full text-xs font-semibold transition-all"
+                >
+                  Back
+                </button>
               </div>
-              <button
-                onClick={() => router.push(localizedDashboardPath)}
-                className="px-5 py-2.5 bg-[#FF6B4A] hover:bg-[#ff5a33] text-white rounded-full text-xs font-semibold uppercase tracking-wider transition-all hover:scale-[1.02]"
-              >
-                Return to Signal Feed
-              </button>
             </main>
             <footer className="max-w-xl mx-auto w-full py-4 border-t border-gray-200 text-center text-[10px] text-gray-550 font-mono uppercase">
               viralspy

@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { computeVelocityScore } from '@/lib/velocity';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error('Supabase URL and Service Role Key must be defined.');
+  }
+  return createClient(url, key);
+}
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -31,6 +35,7 @@ function mapYouTubeCategoryToNiche(categoryId: string, title: string): string {
 
 // ─── Agent 2: Anomaly Detector ────────────────────────────
 async function runAnomalyDetector(trendId: string, currentVelocity: number, currentMomentum: string, currentConfidence: number) {
+  const supabase = getSupabase();
   try {
     const { data: snapshots } = await supabase
       .from('trend_snapshots')
@@ -69,6 +74,7 @@ async function runAnomalyDetector(trendId: string, currentVelocity: number, curr
 }
 
 export async function GET() {
+  const supabase = getSupabase();
   const results = {
     youtube: 0,
     instagram: 0,

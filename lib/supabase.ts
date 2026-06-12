@@ -1,4 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 import { UserProfile, NicheType } from '../types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -45,7 +46,14 @@ export const isDemoModeActive = (): boolean => {
 // Create client instance safely
 export const supabase = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')
   ? null
-  : createClient(supabaseUrl, supabaseAnonKey);
+  : createSupabaseClient(supabaseUrl, supabaseAnonKey);
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
 
 export async function getCurrentUser() {
   if (typeof window === 'undefined') return null;

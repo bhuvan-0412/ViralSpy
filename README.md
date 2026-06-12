@@ -26,7 +26,7 @@ This application is built using the **SpecKit Design System**—a minimalist, ci
 - **Database / Auth:** Supabase Client Wrapper in [lib/supabase.js](file:///d:/ViralSpy/lib/supabase.js) supporting:
   - Google OAuth
   - Auto LocalStorage-based Guest Demo Mode (runs seamlessly when Supabase credentials are placeholders)
-- **AI Intelligence:** OpenAI GPT-4o API for structured content brief generation (with automatic structured mock fallbacks when API keys are not supplied)
+- **AI Intelligence:** Google Gemini API for structured content brief generation (with automatic structured mock fallbacks when API keys are not supplied)
 - **Visualization:** Custom SVG [components/Sparkline.js](file:///d:/ViralSpy/components/Sparkline.js) mapped to the SpecKit color palette.
 
 ---
@@ -70,7 +70,7 @@ Create a `.env.local` file in the root directory:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-OPENAI_API_KEY=your-openai-api-key
+GEMINI_API_KEY=your-gemini-api-key
 ```
 *Note: If these remain empty or placeholders, ViralSpy automatically runs in **Guest Demo Mode**, using local mock generators and local storage.*
 

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '../../../lib/supabase-server';
+import { validateEnv } from '../../../lib/env';
 import { generateBrief } from '../../../lib/ai-provider';
+import { getOllamaUrl } from '../../../lib/wsl-detect';
 import { Brief, BriefFormatType, Angle } from '../../../types';
 
 function generateMockBrief(
@@ -20,7 +22,7 @@ function generateMockBrief(
     '#contentstrategy'
   ];
 
-  let hook = `Your ${niche} routine is lying to you.`;
+  let hook = `${trendName} is changing everything — here's why`;
   let angles: Angle[] = [
     {
       title: `Why most fail the ${cleanName}`,
@@ -39,7 +41,7 @@ function generateMockBrief(
 
   // Customize mock briefs slightly by niche/trend name
   if (niche === 'fitness' || cleanName.toLowerCase().includes('grounding') || cleanName.toLowerCase().includes('shaking')) {
-    hook = "Your nervous system is lying to you.";
+    hook = `${trendName} is changing everything — here's why`;
     format = 'POV';
     angles = [
       {
@@ -56,7 +58,7 @@ function generateMockBrief(
       }
     ];
   } else if (niche === 'food' || cleanName.toLowerCase().includes('dinner') || cleanName.toLowerCase().includes('coffee')) {
-    hook = "Stop making this viral recipe wrong.";
+    hook = `${trendName} is changing everything — here's why`;
     format = 'TUTORIAL';
     angles = [
       {
@@ -142,6 +144,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  validateEnv();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const serviceRoleKey = supabaseServiceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -156,7 +159,24 @@ export async function POST(request: Request) {
     : null;
   
   try {
-    const { trendId, userId, forceRegenerate } = await request.json();
+    const body = await request.json();
+    const { trendId, userId, forceRegenerate } = body;
+    let trendName = body.trendName;
+    let niche = body.niche;
+    let platform = body.platform;
+    let velocityScore = body.velocityScore;
+    let momentumStatus = body.momentumStatus;
+
+    // Log the incoming request body at the top of POST handler
+    console.log('Brief request:', { 
+      trendId, 
+      trendName, 
+      niche, 
+      platform, 
+      velocityScore, 
+      momentumStatus 
+    });
+
     if (!trendId) {
       return NextResponse.json({ success: false, error: 'Missing trendId parameter.' }, { status: 400 });
     }
@@ -172,33 +192,30 @@ export async function POST(request: Request) {
           .delete()
           .eq('trend_id', trendId);
       } else {
-        // Cache hit: return existing brief
-        const { data: existing, error: findError } = await supabase!
+        // Check cache by trend_id specifically:
+        const { data: cached } = await supabase!
           .from('briefs')
           .select('*')
           .eq('trend_id', trendId)
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
-
-        if (!findError && existing) {
+        
+        if (cached) {
           const formatted = {
-            ...existing,
-            angles: typeof existing.angles === 'string' ? JSON.parse(existing.angles) : (existing.angles || []),
-            hashtags: typeof existing.hashtags === 'string' ? JSON.parse(existing.hashtags) : (existing.hashtags || [])
+            ...cached,
+            angles: typeof cached.angles === 'string' ? JSON.parse(cached.angles) : (cached.angles || []),
+            hashtags: typeof cached.hashtags === 'string' ? JSON.parse(cached.hashtags) : (cached.hashtags || [])
           };
-          return NextResponse.json({ success: true, data: formatted });
+          return Response.json({ success: true, data: formatted });
         }
       }
     }
 
     // Fetch the trend details
-    let trendName = "somatic shaking exercise";
-    let niche = "fitness";
-    let platform = "INSTAGRAM";
-    let velocityScore = 268.29;
-    let momentumStatus = "RISING";
     let dbTrendId = trendId;
 
-    if (isRealTrend) {
+    if (isRealTrend && !trendName) {
       const { data: trendData } = await supabase
         .from('trends')
         .select('*')
@@ -217,27 +234,39 @@ export async function POST(request: Request) {
       dbTrendId = trendData.id;
     }
 
-    let strategistBrief = generateMockBrief(trendName, niche, platform, velocityScore, momentumStatus);
+    let strategistBrief: any;
 
     try {
-      const provider = request.headers.get('x-ai-provider') as any || 'gemini';
-      const byokKey = request.headers.get('x-byok-key') || undefined;
-      const byokProvider = (request.headers.get('x-byok-provider') as 'gemini' | 'openai') || 'gemini';
-      const ollamaUrl = request.headers.get('x-ollama-url') || 'http://localhost:11434';
-      const ollamaModel = request.headers.get('x-ollama-model') || 'llama3';
-      const lang = request.headers.get('x-locale') || 'en';
+      const provider = (request.headers.get('x-ai-provider') 
+        || 'ollama') as 'ollama' | 'byok'
+      const byokProvider = (request.headers.get('x-byok-provider') 
+        || 'openai') as 'gemini' | 'openai' | 'custom'
+      const byokKey = request.headers.get('x-byok-key') || ''
+      const byokBaseUrl = request.headers.get('x-byok-base-url') 
+        || 'https://api.openai.com/v1'
+      const byokModel = request.headers.get('x-byok-model') || ''
+      const requestedOllamaUrl = request.headers.get('x-ollama-url') 
+        || 'http://localhost:11434'
+      const ollamaUrl = getOllamaUrl(requestedOllamaUrl)
+      const ollamaModel = request.headers.get('x-ollama-model') 
+        || 'llama3'
+      const lang = request.headers.get('x-locale') || 'en'
 
       const briefResult = await generateBrief(
         { trendName, niche, platform, velocityScore, momentumStatus },
         provider,
-        { byokKey, byokProvider, ollamaUrl, ollamaModel, lang }
+        { byokProvider, byokKey, byokBaseUrl, byokModel, ollamaUrl, ollamaModel, lang }
       );
       
       if (briefResult && typeof briefResult === 'object' && 'hook' in briefResult) {
         strategistBrief = briefResult as any;
+      } else {
+        throw new Error('Invalid AI response format');
       }
-    } catch (err: any) {
-      console.warn('AI brief generation error, falling back to mock:', err.message);
+    } catch (error: any) {
+      return Response.json({ 
+        error: error.message 
+      }, { status: 500 })
     }
 
     const briefData = {

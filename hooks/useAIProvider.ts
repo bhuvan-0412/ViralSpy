@@ -1,20 +1,25 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-export type AIProvider = 'gemini' | 'openai' | 'ollama' | 'byok'
+export type AIProvider = 'ollama' | 'byok'
+export type BYOKProvider = 'gemini' | 'openai' | 'custom'
 
 interface AIConfig {
   provider: AIProvider
+  byokProvider: BYOKProvider
   byokKey: string
-  byokProvider: 'gemini' | 'openai'
+  byokBaseUrl: string
+  byokModel: string
   ollamaUrl: string
   ollamaModel: string
 }
 
 const DEFAULT_CONFIG: AIConfig = {
-  provider: 'gemini',
+  provider: 'ollama',
+  byokProvider: 'openai',
   byokKey: '',
-  byokProvider: 'gemini',
+  byokBaseUrl: 'https://api.openai.com/v1',
+  byokModel: '',
   ollamaUrl: 'http://localhost:11434',
   ollamaModel: 'llama3'
 }
@@ -37,11 +42,33 @@ export function useAIProvider() {
 
   const getHeaders = (): Record<string, string> => ({
     'x-ai-provider': config.provider,
-    'x-byok-key': config.byokKey,
     'x-byok-provider': config.byokProvider,
+    'x-byok-key': config.byokKey,
+    'x-byok-base-url': config.byokBaseUrl,
+    'x-byok-model': config.byokModel,
     'x-ollama-url': config.ollamaUrl,
-    'x-ollama-model': config.ollamaModel
+    'x-ollama-model': config.ollamaModel,
   })
 
   return { config, saveConfig, getHeaders }
+}
+
+export async function detectOllamaUrl(): Promise<string> {
+  const urlsToTry = [
+    'http://localhost:11434',
+    'http://127.0.0.1:11434',
+    'http://172.29.130.173:11434', // WSL common range
+    'http://172.17.0.1:11434',
+  ]
+  
+  for (const url of urlsToTry) {
+    try {
+      const res = await fetch(`/api/ollama-test?url=${url}`, {
+        signal: AbortSignal.timeout(2000)
+      })
+      const data = await res.json()
+      if (data.connected) return url
+    } catch {}
+  }
+  return 'http://localhost:11434'
 }
