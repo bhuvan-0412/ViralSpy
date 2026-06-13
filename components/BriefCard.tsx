@@ -13,9 +13,21 @@ interface BriefCardProps {
   onRegenerate: () => void;
   onBack: () => void;
   isRegenerating?: boolean;
+  isSaved?: boolean;
+  isSaving?: boolean;
+  onSave?: () => void;
 }
 
-export default function BriefCard({ brief, trend, onRegenerate, onBack, isRegenerating = false }: BriefCardProps) {
+export default function BriefCard({ 
+  brief, 
+  trend, 
+  onRegenerate, 
+  onBack, 
+  isRegenerating = false,
+  isSaved = false,
+  isSaving = false,
+  onSave
+}: BriefCardProps) {
   const t = useTranslations('brief');
   const [copiedHook, setCopiedHook] = useState(false);
   const [copiedTagIdx, setCopiedTagIdx] = useState<number | null>(null);
@@ -84,17 +96,59 @@ Generated via ViralSpy`;
       
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between border-b border-gray-250 pb-4">
-        <button
-          onClick={onBack}
-          className="text-sm font-semibold text-gray-500 hover:text-[#FF6B4A] transition-colors"
-        >
-          {t('back')}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="text-sm font-semibold text-gray-500 hover:text-[#FF6B4A] transition-colors"
+          >
+            {t('back')}
+          </button>
+          {onSave && (
+            <button
+              onClick={onSave}
+              disabled={isSaving}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-full
+                text-sm font-semibold transition-all duration-200
+                border
+                ${isSaved
+                  ? 'bg-[#FF6B4A] text-white border-[#FF6B4A] hover:bg-[#e55a3a]'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-[#FF6B4A] hover:text-[#FF6B4A]'
+                }
+                ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}
+              `}
+            >
+              {isSaving ? (
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" 
+                    stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+              ) : isSaved ? (
+                <>
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M5 3a2 2 0 00-2 2v16l7-3 7 3V5a2 2 0 00-2-2H5z"/>
+                  </svg>
+                  <span>Saved</span>
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" 
+                    viewBox="0 0 24 24" strokeWidth="2">
+                    <path d="M5 3a2 2 0 00-2 2v16l7-3 7 3V5a2 2 0 00-2-2H5z"/>
+                  </svg>
+                  <span>Save Brief</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
         <div className="flex items-center space-x-3">
           <button
             onClick={onRegenerate}
             disabled={isRegenerating}
-            className="flex items-center space-x-1.5 px-4 py-2 bg-white border border-gray-200 hover:border-[#FF6B4A] text-gray-705 hover:text-[#FF6B4A] rounded-full text-xs font-semibold transition-all hover:scale-[1.02]"
+            className="flex items-center space-x-1.5 px-4 py-2 bg-white border border-gray-200 hover:border-[#FF6B4A] text-gray-755 hover:text-[#FF6B4A] rounded-full text-xs font-semibold transition-all hover:scale-[1.02]"
           >
             <RotateCw className={`h-3.5 w-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
             <span>{isRegenerating ? 'Generating...' : 'Regenerate'}</span>

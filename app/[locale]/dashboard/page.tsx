@@ -12,7 +12,7 @@ import Logo from '../../../components/Logo';
 import LanguageSwitcher from '../../../components/LanguageSwitcher';
 import AIProviderBadge from '../../../components/AIProviderBadge';
 import { formatIndianNumber, formatIST } from '../../../lib/format';
-import { LogOut, Eye, TrendingUp, Flame, Activity, FileText, RefreshCw, CheckCircle, Settings, HelpCircle, MessageSquare } from 'lucide-react';
+import { LogOut, Eye, TrendingUp, Flame, Activity, FileText, RefreshCw, CheckCircle, Settings, HelpCircle, MessageSquare, Bookmark } from 'lucide-react';
 import { useAIProvider } from '../../../hooks/useAIProvider';
 
 export default function DashboardPage() {
@@ -262,6 +262,18 @@ export default function DashboardPage() {
 
             {/* AI Provider Badge component */}
             <AIProviderBadge />
+
+            {/* My Briefs button */}
+            <button
+              onClick={() => router.push(
+                locale === 'en' ? '/briefs' : `/${locale}/briefs`
+              )}
+              className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-650 hover:text-[#FF6B4A] rounded-xl text-xs font-semibold transition-colors"
+              title="My Saved Briefs"
+            >
+              <Bookmark className="h-4 w-4" />
+              <span className="hidden sm:block">My Briefs</span>
+            </button>
 
             <div className="flex items-center space-x-2.5">
               <span className="text-xs text-gray-500 font-semibold hidden md:inline">

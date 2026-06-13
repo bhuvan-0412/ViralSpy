@@ -9,6 +9,8 @@ import BriefCard from '../../../../components/BriefCard';
 import Logo from '../../../../components/Logo';
 import { Eye } from 'lucide-react';
 import { useAIProvider } from '../../../../hooks/useAIProvider';
+import { createClient } from '../../../../lib/supabase';
+import Toast from '../../../../components/Toast';
 
 export default function BriefPage() {
   const router = useRouter();
@@ -25,6 +27,10 @@ export default function BriefPage() {
   const [fetching, setFetching] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState('');
+
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   // Loading Screen States
   const [progress, setProgress] = useState(0);
@@ -74,6 +80,68 @@ export default function BriefPage() {
       loadBriefData();
     }
   }, [id]);
+
+  // Check if already saved on mount:
+  useEffect(() => {
+    const checkSaved = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        const { data } = await supabase
+          .from('saved_trends')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('trend_id', brief?.trend_id)
+          .single();
+        
+        if (data) setIsSaved(true);
+      } catch (err) {
+        console.error('Check saved error:', err);
+      }
+    };
+    if (brief?.trend_id) checkSaved();
+  }, [brief]);
+
+  // Save handler:
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        alert('Please sign in to save briefs');
+        return;
+      }
+      
+      if (isSaved) {
+        // Unsave
+        await supabase
+          .from('saved_trends')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('trend_id', brief?.trend_id);
+        setIsSaved(false);
+      } else {
+        // Save
+        await supabase
+          .from('saved_trends')
+          .insert({
+            user_id: user.id,
+            trend_id: brief?.trend_id,
+            saved_at: new Date().toISOString()
+          });
+        setIsSaved(true);
+        setShowToast(true);
+      }
+    } catch (e) {
+      console.error('Save error:', e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Progress Bar Animation (0% to 90% over 8 seconds, 100% when loaded)
   useEffect(() => {
@@ -150,6 +218,7 @@ export default function BriefPage() {
 
   const isShowLoadingScreen = fetching || (loading && !user);
   const localizedDashboardPath = locale === 'en' ? '/dashboard' : `/${locale}/dashboard`;
+  const getLocalizedPath = (path: string) => locale === 'en' ? path : `/${locale}${path}`;
 
   return (
     <div className="min-h-screen bg-[#F7F5F2] text-[#1A1A1A] flex flex-col justify-between font-sans relative overflow-hidden">
@@ -251,8 +320,18 @@ export default function BriefPage() {
                 onRegenerate={handleRegenerate}
                 onBack={() => router.push(localizedDashboardPath)}
                 isRegenerating={regenerating}
+                isSaved={isSaved}
+                isSaving={isSaving}
+                onSave={handleSave}
               />
             </main>
+            {showToast && (
+              <Toast 
+                message="✅ Brief saved to My Briefs"
+                link={{ label: "View My Briefs", href: getLocalizedPath('/briefs') }}
+                onClose={() => setShowToast(false)}
+              />
+            )}
             <footer className="max-w-[720px] mx-auto w-full py-6 px-4 sm:px-0 border-t border-gray-200 flex justify-between items-center text-xs text-gray-550 mt-12">
               <div>© 2026 ViralSpy.</div>
               <div className="text-[#FF6B4A] italic">Quietly Rise</div>
