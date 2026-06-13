@@ -88,7 +88,8 @@ export default function BriefPage() {
     const checkSaved = async () => {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         if (!user) return;
         
         const { data } = await supabase
@@ -106,13 +107,22 @@ export default function BriefPage() {
     if (brief?.trend_id) checkSaved();
   }, [brief]);
 
-  // Save handler:
   const handleSave = async () => {
     setIsSaving(true);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        // Try to refresh session first
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        if (!refreshed?.session?.user) {
+          alert('Please sign in to save briefs');
+          return;
+        }
+      }
+      const user = session?.user || 
+        (await supabase.auth.refreshSession()).data.session?.user;
+
       if (!user) {
         alert('Please sign in to save briefs');
         return;
