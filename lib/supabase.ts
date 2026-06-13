@@ -51,21 +51,28 @@ export const supabase = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes
 let clientInstance: ReturnType<typeof createBrowserClient> | null = null;
 
 export function createClient() {
-  if (clientInstance) return clientInstance;
+  if (typeof window === 'undefined') {
+    return createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  }
   
-  clientInstance = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
+  if (!clientInstance) {
+    clientInstance = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          flowType: 'pkce'
+        }
       }
-    }
-  );
-  
-  return clientInstance;
+    )
+  }
+  return clientInstance
 }
 
 export async function getCurrentUser() {

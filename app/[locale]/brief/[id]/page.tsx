@@ -108,52 +108,64 @@ export default function BriefPage() {
   }, [brief]);
 
   const handleSave = async () => {
-    setIsSaving(true);
+    setIsSaving(true)
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        // Try to refresh session first
-        const { data: refreshed } = await supabase.auth.refreshSession();
-        if (!refreshed?.session?.user) {
-          alert('Please sign in to save briefs');
-          return;
+      const supabase = createClient()
+      
+      // Try getSession first, then getUser as fallback
+      let userId = null
+      
+      const { data: { session } } = 
+        await supabase.auth.getSession()
+      
+      if (session?.user) {
+        userId = session.user.id
+      } else {
+        // Try refreshing
+        const { data: refreshed } = 
+          await supabase.auth.refreshSession()
+        if (refreshed?.session?.user) {
+          userId = refreshed.session.user.id
         }
       }
-      const user = session?.user || 
-        (await supabase.auth.refreshSession()).data.session?.user;
-
-      if (!user) {
-        alert('Please sign in to save briefs');
-        return;
+      
+      if (!userId) {
+        alert('Session expired. Please sign in again.')
+        window.location.href = '/'
+        return
       }
       
       if (isSaved) {
-        // Unsave
         await supabase
           .from('saved_trends')
           .delete()
-          .eq('user_id', user.id)
-          .eq('trend_id', brief?.trend_id);
-        setIsSaved(false);
+          .eq('user_id', userId)
+          .eq('trend_id', brief?.trend_id)
+        setIsSaved(false)
       } else {
-        // Save
-        await supabase
+        const { error } = await supabase
           .from('saved_trends')
           .insert({
-            user_id: user.id,
+            user_id: userId,
             trend_id: brief?.trend_id,
             saved_at: new Date().toISOString()
-          });
-        setIsSaved(true);
-        setShowToast(true);
+          })
+        
+        if (error) {
+          console.error('Save error:', error)
+          alert(`Save failed: ${error.message}`)
+          return
+        }
+        setIsSaved(true)
+        setShowToast(true)
       }
-    } catch (e) {
-      console.error('Save error:', e);
+    } catch (e: any) {
+      console.error('Save error:', e)
+      alert(`Error: ${e.message}`)
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   useEffect(() => {
     if (!isLoading) return;

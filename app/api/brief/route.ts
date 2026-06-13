@@ -148,7 +148,36 @@ export async function GET(request: Request) {
   return NextResponse.json({ success: true, data: getSimulatedBrief() });
 }
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
+  // On Vercel, Ollama is unavailable — force OpenAI
+  const isVercel = process.env.VERCEL === '1'
+  const provider = isVercel ? 'openai' : 
+    (req.headers.get('x-ai-provider') || 'openai')
+
+  const providerConfig = isVercel ? {
+    provider: 'openai' as const,
+    apiKey: process.env.OPENAI_API_KEY!,
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'gpt-4o',
+    ollamaUrl: '',
+    ollamaModel: ''
+  } : {
+    provider,
+    apiKey: req.headers.get('x-byok-key') || 
+      process.env.OPENAI_API_KEY!,
+    baseUrl: req.headers.get('x-byok-base-url') || 
+      'https://api.openai.com/v1',
+    model: req.headers.get('x-byok-model') || 'gpt-4o',
+    ollamaUrl: req.headers.get('x-ollama-url') || '',
+    ollamaModel: req.headers.get('x-ollama-model') || ''
+  }
+
+  console.log('Brief generation config:', {
+    provider: providerConfig.provider,
+    isVercel,
+    hasApiKey: !!providerConfig.apiKey
+  })
+
   validateEnv();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -164,7 +193,7 @@ export async function POST(request: Request) {
     : null;
   
   try {
-    const body = await request.json();
+    const body = await req.json();
     const { trendId, userId, forceRegenerate, preGenerated, briefData: preGeneratedBrief } = body;
     let trendName = body.trendName;
     console.log('Brief API called with:', { trendId, trendName })
@@ -292,20 +321,11 @@ export async function POST(request: Request) {
       strategistBrief = preGeneratedBrief;
     } else {
       try {
-        const provider = (request.headers.get('x-ai-provider') 
-          || 'ollama') as 'ollama' | 'byok'
-        const byokProvider = (request.headers.get('x-byok-provider') 
-          || 'openai') as 'gemini' | 'openai' | 'custom'
-        const byokKey = request.headers.get('x-byok-key') || ''
-        const byokBaseUrl = request.headers.get('x-byok-base-url') 
-          || 'https://api.openai.com/v1'
-        const byokModel = request.headers.get('x-byok-model') || ''
-        const requestedOllamaUrl = request.headers.get('x-ollama-url') 
-          || 'http://localhost:11434'
-        const ollamaUrl = getOllamaUrl(requestedOllamaUrl)
-        const ollamaModel = request.headers.get('x-ollama-model') 
-          || 'llama3'
-        const lang = request.headers.get('x-locale') || 'en'
+        const apiProvider = (providerConfig.provider === 'ollama') ? 'ollama' : 'byok'
+        const byokProvider = isVercel ? 'openai' : 
+          ((req.headers.get('x-byok-provider') || 'openai') as 'gemini' | 'openai' | 'custom')
+        const ollamaUrl = getOllamaUrl(providerConfig.ollamaUrl || 'http://localhost:11434')
+        const lang = req.headers.get('x-locale') || 'en'
 
         // Fetch real competitor posts to enrich the prompt
         const competitors = await fetchCompetitorPosts(trendName, platform)
@@ -313,14 +333,23 @@ export async function POST(request: Request) {
 
         const briefResult = await generateBrief(
           { trendName, niche, platform, velocityScore, momentumStatus },
-          provider,
-          { byokProvider, byokKey, byokBaseUrl, byokModel, ollamaUrl, ollamaModel, lang, competitors }
+          apiProvider,
+          {
+            byokProvider,
+            byokKey: providerConfig.apiKey,
+            byokBaseUrl: providerConfig.baseUrl,
+            byokModel: providerConfig.model,
+            ollamaUrl,
+            ollamaModel: providerConfig.ollamaModel,
+            lang,
+            competitors
+          }
         );
         
         if (briefResult && typeof briefResult === 'object' && 'hook' in briefResult) {
           strategistBrief = briefResult as any;
           // Stash metadata for Supabase insert
-          ;(strategistBrief as any)._meta = { model: ollamaModel || byokModel || 'default' }
+          ;(strategistBrief as any)._meta = { model: providerConfig.ollamaModel || providerConfig.model || 'default' }
         } else {
           throw new Error('Invalid AI response format');
         }

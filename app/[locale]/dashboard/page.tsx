@@ -214,6 +214,9 @@ export default function DashboardPage() {
     return locale === 'en' ? path : `/${locale}${path}`;
   };
 
+  const getBriefsPath = () => 
+    locale === 'en' ? '/briefs' : `/${locale}/briefs`;
+
   if (loading || !user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#F7F5F2] text-[#6B7280] space-y-3">
@@ -240,7 +243,7 @@ export default function DashboardPage() {
           {/* Nav Links Center */}
           <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold text-gray-655">
             <button onClick={() => router.push(getLocalizedPath('/dashboard'))} className="text-gray-500 hover:text-[#FF6B4A] transition-colors">{t('title')}</button>
-            <button onClick={() => router.push(getLocalizedPath('/briefs'))} className="hover:text-[#FF6B4A] transition-colors">{tNav('briefs')}</button>
+            <button onClick={() => router.push(getBriefsPath())} className="hover:text-[#FF6B4A] transition-colors">{tNav('briefs')}</button>
             <button onClick={() => router.push(getLocalizedPath('/feedback'))} className="hover:text-[#FF6B4A] transition-colors flex items-center gap-1.5">
               <MessageSquare className="h-4 w-4" />
               <span>{tNav('feedback')}</span>
@@ -265,9 +268,7 @@ export default function DashboardPage() {
 
             {/* My Briefs button */}
             <button
-              onClick={() => router.push(
-                locale === 'en' ? '/briefs' : `/${locale}/briefs`
-              )}
+              onClick={() => router.push(getBriefsPath())}
               className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-650 hover:text-[#FF6B4A] rounded-xl text-xs font-semibold transition-colors"
               title="My Saved Briefs"
             >
