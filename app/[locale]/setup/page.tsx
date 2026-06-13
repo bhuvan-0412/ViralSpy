@@ -1014,7 +1014,6 @@ export default function SetupPage() {
       {/* Footer Bar */}
       <footer className="w-full max-w-3xl mx-auto py-6 border-t border-gray-200 flex items-center justify-between text-xs text-gray-550 mt-12 px-4 sm:px-6">
         <div>© 2026 ViralSpy.</div>
-        <div className="text-[#FF6B4A] italic font-semibold">Quietly Rise</div>
       </footer>
     </div>
   );

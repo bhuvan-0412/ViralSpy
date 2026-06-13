@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { createClient } from '../../../lib/supabase';
+import { createClient, isDemoModeActive } from '../../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import Logo from '../../../components/Logo';
@@ -43,61 +43,73 @@ export default function BriefsPage() {
     locale === 'en' ? `/brief/${id}` : `/${locale}/brief/${id}`;
 
   useEffect(() => {
-    const checkAuth = async () => {
+    let mounted = true
+    
+    const init = async () => {
       const supabase = createClient()
       
-      // Wait for session to be available
+      // Listen for auth state
+      const { data: { subscription } } = 
+        supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            if (!mounted) return
+            
+            if (session?.user) {
+              // User is logged in — load briefs
+              await loadSavedBriefs(session.user.id)
+            } else if (event === 'SIGNED_OUT') {
+              router.push('/')
+            }
+            // If INITIAL_SESSION with no user,
+            // wait — don't redirect immediately
+          }
+        )
+      
+      // Also check existing session immediately
       const { data: { session } } = 
         await supabase.auth.getSession()
       
-      if (!session) {
-        // Try refreshing once before giving up
-        const { data: refreshed } = 
-          await supabase.auth.refreshSession()
-        if (!refreshed?.session) {
-          router.push('/')
-          return
-        }
+      if (session?.user && mounted) {
+        await loadSavedBriefs(session.user.id)
+      } else if (isDemoModeActive() && mounted) {
+        await loadSavedBriefs('demo-guest-uuid-1234-5678')
       }
       
-      // Session exists — load briefs
-      loadSavedBriefs()
+      if (mounted) setLoading(false)
+      
+      return () => subscription.unsubscribe()
     }
     
-    // Small delay to let session cookie load
-    const timer = setTimeout(checkAuth, 300)
-    return () => clearTimeout(timer)
+    init()
+    return () => { mounted = false }
   }, [])
 
-  const loadSavedBriefs = async () => {
-    setLoading(true);
+  const loadSavedBriefs = async (userId: string) => {
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        // Don't redirect — just show empty state
-        setLoading(false)
+      if (isDemoModeActive()) {
+        const localSaved = localStorage.getItem('viralspy_demo_trends')
+        const savedList = localSaved ? JSON.parse(localSaved) : []
+        setSavedBriefs(savedList)
         return
       }
 
-      // Get saved trends with their briefs
+      const supabase = createClient()
+      
       const { data: saved, error } = await supabase
         .from('saved_trends')
         .select(`
           id,
           saved_at,
           trend:trends(
-            id, name, niche, platform, 
+            id, name, niche, platform,
             velocity_score, momentum_status
           )
         `)
-        .eq('user_id', user.id)
-        .order('saved_at', { ascending: false });
+        .eq('user_id', userId)
+        .order('saved_at', { ascending: false })
 
-      if (error) throw error;
+      if (error) throw error
 
-      // For each saved trend, get the most recent brief
       const enriched = await Promise.all(
         (saved || []).map(async (item: any) => {
           const { data: brief } = await supabase
@@ -106,23 +118,32 @@ export default function BriefsPage() {
             .eq('trend_id', item.trend?.id)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
-
-          return { ...item, brief: brief || null };
+            .single()
+          return { ...item, brief: brief || null }
         })
-      );
-
-      setSavedBriefs(enriched);
+      )
+      
+      setSavedBriefs(enriched)
     } catch (e) {
-      console.error('Error loading saved briefs:', e);
+      console.error('Error loading saved briefs:', e)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleUnsave = async (savedId: string) => {
     setDeletingId(savedId);
     try {
+      if (isDemoModeActive()) {
+        const localSaved = localStorage.getItem('viralspy_demo_trends');
+        let savedList = localSaved ? JSON.parse(localSaved) : [];
+        savedList = savedList.filter((item: any) => item.id !== savedId);
+        localStorage.setItem('viralspy_demo_trends', JSON.stringify(savedList));
+        setSavedBriefs((prev) => 
+          prev.filter((b) => b.id !== savedId));
+        return;
+      }
+
       const supabase = createClient();
       await supabase
         .from('saved_trends')
@@ -329,7 +350,6 @@ export default function BriefsPage() {
       {/* Footer */}
       <footer className="w-full max-w-4xl mx-auto py-6 border-t border-gray-200 flex items-center justify-between text-xs text-gray-550 px-4 sm:px-6 mt-12">
         <div>© 2026 ViralSpy.</div>
-        <div className="text-[#FF6B4A] italic font-semibold">Quietly Rise</div>
       </footer>
     </div>
   );

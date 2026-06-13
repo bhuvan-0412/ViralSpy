@@ -93,4 +93,4 @@ Once running, ping `/api/seed` (or click **"RE-SEED DEMO"** on the dashboard) to
 
 ---
 
-💼 *ViralSpy — Quietly Rise*
+💼 *ViralSpy*

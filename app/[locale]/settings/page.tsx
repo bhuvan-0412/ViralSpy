@@ -744,7 +744,6 @@ export default function SettingsPage() {
 
       <footer className="max-w-3xl mx-auto w-full py-6 border-t border-gray-200 flex justify-between items-center text-xs text-gray-550 mt-12 px-4">
         <div>© 2026 ViralSpy.</div>
-        <div className="text-[#FF6B4A] italic">Quietly Rise</div>
       </footer>
 
       {/* Setup Guide Modal */}

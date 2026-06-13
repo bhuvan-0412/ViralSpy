@@ -9,7 +9,7 @@ import BriefCard from '../../../../components/BriefCard';
 import Logo from '../../../../components/Logo';
 import { Eye } from 'lucide-react';
 import { useAIProvider } from '../../../../hooks/useAIProvider';
-import { createClient } from '../../../../lib/supabase';
+import { createClient, isDemoModeActive } from '../../../../lib/supabase';
 import Toast from '../../../../components/Toast';
 
 export default function BriefPage() {
@@ -87,6 +87,14 @@ export default function BriefPage() {
   useEffect(() => {
     const checkSaved = async () => {
       try {
+        if (isDemoModeActive()) {
+          const localSaved = localStorage.getItem('viralspy_demo_trends');
+          const savedList = localSaved ? JSON.parse(localSaved) : [];
+          const exists = savedList.some((item: any) => item.trend_id === brief?.trend_id);
+          if (exists) setIsSaved(true);
+          return;
+        }
+
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user;
@@ -110,6 +118,31 @@ export default function BriefPage() {
   const handleSave = async () => {
     setIsSaving(true)
     try {
+      if (isDemoModeActive()) {
+        const localSaved = localStorage.getItem('viralspy_demo_trends');
+        let savedList = localSaved ? JSON.parse(localSaved) : [];
+        
+        if (isSaved) {
+          // Remove from saved list
+          savedList = savedList.filter((item: any) => item.trend_id !== brief?.trend_id);
+          setIsSaved(false);
+        } else {
+          // Add to saved list
+          savedList.push({
+            id: `demo-saved-${Date.now()}`,
+            user_id: 'demo-guest-uuid-1234-5678',
+            trend_id: brief?.trend_id,
+            saved_at: new Date().toISOString(),
+            trend: trend,
+            brief: brief
+          });
+          setIsSaved(true);
+          setShowToast(true);
+        }
+        localStorage.setItem('viralspy_demo_trends', JSON.stringify(savedList));
+        return;
+      }
+
       const supabase = createClient()
       
       // Try getSession first, then getUser as fallback
@@ -368,7 +401,6 @@ export default function BriefPage() {
               )}
               <footer className="max-w-[720px] mx-auto w-full py-6 px-4 sm:px-0 border-t border-gray-200 flex justify-between items-center text-xs text-gray-550 mt-12">
                 <div>© 2026 ViralSpy.</div>
-                <div className="text-[#FF6B4A] italic">Quietly Rise</div>
               </footer>
             </>
           )}

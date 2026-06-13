@@ -911,7 +911,6 @@ export default function OnboardingPage() {
       {/* Footer */}
       <footer className="w-full max-w-7xl mx-auto py-6 border-t border-gray-200 flex items-center justify-between text-xs text-gray-550 z-10">
         <div>© 2026 ViralSpy.</div>
-        <div className="text-[#FF6B4A] italic">Quietly Rise</div>
       </footer>
 
       {/* Setup Guide Modal */}
