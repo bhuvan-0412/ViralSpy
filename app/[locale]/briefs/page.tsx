@@ -43,8 +43,31 @@ export default function BriefsPage() {
     locale === 'en' ? `/brief/${id}` : `/${locale}/brief/${id}`;
 
   useEffect(() => {
-    loadSavedBriefs();
-  }, []);
+    const checkAuth = async () => {
+      const supabase = createClient()
+      
+      // Wait for session to be available
+      const { data: { session } } = 
+        await supabase.auth.getSession()
+      
+      if (!session) {
+        // Try refreshing once before giving up
+        const { data: refreshed } = 
+          await supabase.auth.refreshSession()
+        if (!refreshed?.session) {
+          router.push('/')
+          return
+        }
+      }
+      
+      // Session exists — load briefs
+      loadSavedBriefs()
+    }
+    
+    // Small delay to let session cookie load
+    const timer = setTimeout(checkAuth, 300)
+    return () => clearTimeout(timer)
+  }, [])
 
   const loadSavedBriefs = async () => {
     setLoading(true);
@@ -53,8 +76,9 @@ export default function BriefsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        router.push('/');
-        return;
+        // Don't redirect — just show empty state
+        setLoading(false)
+        return
       }
 
       // Get saved trends with their briefs
