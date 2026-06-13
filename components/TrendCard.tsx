@@ -72,6 +72,30 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating: propIs
   
   const [localIsGenerating, setLocalIsGenerating] = useState(false);
   const isGenerating = propIsGenerating || localIsGenerating;
+
+  const [loadingStep, setLoadingStep] = useState(0);
+
+  const loadingMessages = [
+    "⚡ Analyzing trend signals...",
+    "🧠 Building content strategy...",
+    "✍️ Writing your hook...",
+    "🎯 Crafting video angles...",
+    "🏷️ Selecting hashtags...",
+    "✅ Almost done..."
+  ];
+
+  useEffect(() => {
+    if (!isGenerating) {
+      setLoadingStep(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setLoadingStep(prev => 
+        prev < loadingMessages.length - 1 ? prev + 1 : prev
+      );
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isGenerating]);
   
   const handleGenerateBrief = async () => {
     setLocalIsGenerating(true);
@@ -230,24 +254,18 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating: propIs
 
       {/* Footer Actions */}
       <div className="flex items-center justify-between pt-2">
-        <span className="text-xs font-semibold text-gray-450">
-          {t('detectedAt')} {formatIST(trend.detected_at)}
-        </span>
-        <button
-          onClick={handleGenerateBrief}
-          disabled={isGenerating}
-          className={`
-            flex items-center gap-2 px-4 py-2 rounded-full
-            text-sm font-semibold transition-all duration-200
-            ${isGenerating 
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-[#FF6B4A] text-white hover:bg-[#e55a3a] hover:scale-[1.03] active:scale-95 shadow-sm hover:shadow-md'
-            }
-          `}
-        >
-          {isGenerating ? (
-            <>
-              <svg className="animate-spin h-3.5 w-3.5" 
+        {!isGenerating && (
+          <span className="text-xs font-semibold text-gray-450 shrink-0">
+            {t('detectedAt')} {formatIST(trend.detected_at)}
+          </span>
+        )}
+        {isGenerating ? (
+          <div className="space-y-2 w-full">
+            {/* Animated button */}
+            <div className="w-full flex items-center justify-center 
+              gap-2 px-4 py-2.5 bg-gray-100 text-gray-500 
+              rounded-full text-sm font-semibold cursor-not-allowed">
+              <svg className="animate-spin h-3.5 w-3.5 shrink-0" 
                 viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" 
                   r="10" stroke="currentColor" strokeWidth="4"/>
@@ -255,14 +273,39 @@ export default function TrendCard({ trend, onGenerateBrief, isGenerating: propIs
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
               <span>Generating...</span>
-            </>
-          ) : (
-            <>
-              <span>Generate Brief</span>
-              <span className="text-xs opacity-80">→</span>
-            </>
-          )}
-        </button>
+            </div>
+            
+            {/* Progress bar */}
+            <div className="w-full bg-gray-100 rounded-full h-1">
+              <div 
+                className="bg-[#FF6B4A] h-1 rounded-full transition-all 
+                  duration-[3000ms] ease-linear"
+                style={{ 
+                  width: `${((loadingStep + 1) / loadingMessages.length) * 90}%` 
+                }}
+              />
+            </div>
+            
+            {/* Cycling message */}
+            <p className="text-[10px] text-gray-400 text-center 
+              font-medium animate-fade-in">
+              {loadingMessages[loadingStep]}
+            </p>
+          </div>
+        ) : (
+          <button
+            onClick={handleGenerateBrief}
+            title="Takes 5-30 seconds with local AI. Use Groq in Settings for 3-second briefs."
+            className="flex-grow sm:flex-grow-0 w-full sm:w-auto flex items-center justify-center 
+              gap-2 px-4 py-2.5 bg-[#FF6B4A] text-white 
+              rounded-full text-sm font-semibold transition-all 
+              hover:bg-[#e55a3a] hover:scale-[1.02] 
+              active:scale-95 shadow-sm"
+          >
+            <span>Generate Brief</span>
+            <span className="text-xs opacity-80">→</span>
+          </button>
+        )}
       </div>
 
     </div>
