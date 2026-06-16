@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-data": "GROQ_API_KEY=your_key tsx scripts/generate-training-data.ts",
+    "prepare-finetune": "tsx scripts/prepare-finetune.ts",
+    "validate-data": "tsx scripts/validate-data.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -30,6 +33,7 @@
     "eslint-config-next": "^16.2.9",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }
 }

@@ -95,11 +95,57 @@ export async function GET() {
         const categoryId = video.snippet.categoryId as string;
 
         const niche = mapYouTubeCategoryToNiche(categoryId, title);
-        const postsPerHour = Math.floor(viewCount / 24);
-        const avg = Math.max(5, Math.floor(postsPerHour * 0.4));
-        const { score, status } = computeVelocityScore(postsPerHour, avg);
+        
+        let postsPerHour = 0;
+        let avgPosts24h = 0;
+        let velocityScore = 0;
 
-        const { data: upserted, error } = await supabase
+        const { data: existing } = await supabase
+          .from('trends')
+          .select('post_count, posts_per_hour, avg_posts_24h, velocity_score, updated_at')
+          .eq('name', title.slice(0, 100))
+          .eq('platform', 'YOUTUBE')
+          .single();
+
+        if (existing) {
+          // Calculate real delta
+          const timeDiffHours = (Date.now() - new Date(existing.updated_at).getTime()) / (1000 * 60 * 60);
+          const countDelta = viewCount - existing.post_count;
+          postsPerHour = timeDiffHours > 0 
+            ? Math.round(countDelta / timeDiffHours)
+            : existing.posts_per_hour;
+
+          // Update rolling 24h average using exponential moving average
+          const alpha = 0.1; // smoothing factor
+          avgPosts24h = Math.round(
+            alpha * postsPerHour + 
+            (1 - alpha) * existing.avg_posts_24h
+          );
+
+          // Compute real velocity
+          velocityScore = avgPosts24h > 0
+            ? (postsPerHour / avgPosts24h) * 100
+            : 0;
+        } else {
+          // Use estimate for first poll
+          postsPerHour = Math.floor(viewCount / 168);
+          // 168 = hours in a week, conservative estimate
+          avgPosts24h = Math.floor(postsPerHour * 0.5);
+          velocityScore = 150; // default RISING
+        }
+
+        let momentumStatus: 'EXPLODING' | 'RISING' | 'PEAKED' | 'DEAD' = 'RISING';
+        if (velocityScore >= 300) {
+          momentumStatus = 'EXPLODING';
+        } else if (velocityScore >= 150) {
+          momentumStatus = 'RISING';
+        } else if (velocityScore >= 50) {
+          momentumStatus = 'PEAKED';
+        } else {
+          momentumStatus = 'DEAD';
+        }
+
+        const { data: savedTrend, error } = await supabase
           .from('trends')
           .upsert({
             name: title.slice(0, 100),
@@ -107,11 +153,11 @@ export async function GET() {
             platform: 'YOUTUBE',
             post_count: viewCount,
             posts_per_hour: postsPerHour,
-            avg_posts_24h: avg,
-            velocity_score: score,
-            peak_velocity: score,
-            momentum_status: status,
-            confidence_score: Math.min(0.95, score / 500),
+            avg_posts_24h: avgPosts24h,
+            velocity_score: velocityScore,
+            peak_velocity: velocityScore,
+            momentum_status: momentumStatus,
+            confidence_score: Math.min(0.95, velocityScore / 500),
             detected_at: new Date().toISOString(),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -124,15 +170,15 @@ export async function GET() {
           continue;
         }
 
-        if (upserted) {
+        if (savedTrend) {
           await supabase.from('trend_snapshots').insert({
-            trend_id: upserted.id,
+            trend_id: savedTrend.id,
             post_count: viewCount,
             posts_per_hour: postsPerHour,
-            velocity_score: score,
+            velocity_score: velocityScore,
             snapped_at: new Date().toISOString()
           });
-          await runAnomalyDetector(upserted.id, score, status, Math.min(0.95, score / 500));
+          await runAnomalyDetector(savedTrend.id, velocityScore, momentumStatus, Math.min(0.95, velocityScore / 500));
         }
 
         results.youtube++;
@@ -167,11 +213,57 @@ export async function GET() {
       );
       const data = await res.json();
       const mediaCount = data?.data?.media_count || 0;
-      const postsPerHour = Math.max(10, Math.floor(mediaCount / 1000));
-      const avg = Math.max(5, Math.floor(postsPerHour * 0.4));
-      const { score, status } = computeVelocityScore(postsPerHour, avg);
+      
+      let postsPerHour = 0;
+      let avgPosts24h = 0;
+      let velocityScore = 0;
 
-      const { data: upserted, error } = await supabase
+      const { data: existing } = await supabase
+        .from('trends')
+        .select('post_count, posts_per_hour, avg_posts_24h, velocity_score, updated_at')
+        .eq('name', `#${keyword} trending`)
+        .eq('platform', 'INSTAGRAM')
+        .single();
+
+      if (existing) {
+        // Calculate real delta
+        const timeDiffHours = (Date.now() - new Date(existing.updated_at).getTime()) / (1000 * 60 * 60);
+        const countDelta = mediaCount - existing.post_count;
+        postsPerHour = timeDiffHours > 0 
+          ? Math.round(countDelta / timeDiffHours)
+          : existing.posts_per_hour;
+
+        // Update rolling 24h average using exponential moving average
+        const alpha = 0.1; // smoothing factor
+        avgPosts24h = Math.round(
+          alpha * postsPerHour + 
+          (1 - alpha) * existing.avg_posts_24h
+        );
+
+        // Compute real velocity
+        velocityScore = avgPosts24h > 0
+          ? (postsPerHour / avgPosts24h) * 100
+          : 0;
+      } else {
+        // Use estimate for first poll
+        postsPerHour = Math.floor(mediaCount / 168);
+        // 168 = hours in a week, conservative estimate
+        avgPosts24h = Math.floor(postsPerHour * 0.5);
+        velocityScore = 150; // default RISING
+      }
+
+      let momentumStatus: 'EXPLODING' | 'RISING' | 'PEAKED' | 'DEAD' = 'RISING';
+      if (velocityScore >= 300) {
+        momentumStatus = 'EXPLODING';
+      } else if (velocityScore >= 150) {
+        momentumStatus = 'RISING';
+      } else if (velocityScore >= 50) {
+        momentumStatus = 'PEAKED';
+      } else {
+        momentumStatus = 'DEAD';
+      }
+
+      const { data: savedTrend, error } = await supabase
         .from('trends')
         .upsert({
           name: `#${keyword} trending`,
@@ -179,11 +271,11 @@ export async function GET() {
           platform: 'INSTAGRAM',
           post_count: mediaCount,
           posts_per_hour: postsPerHour,
-          avg_posts_24h: avg,
-          velocity_score: score,
-          peak_velocity: score,
-          momentum_status: status,
-          confidence_score: Math.min(0.85, score / 500),
+          avg_posts_24h: avgPosts24h,
+          velocity_score: velocityScore,
+          peak_velocity: velocityScore,
+          momentum_status: momentumStatus,
+          confidence_score: Math.min(0.85, velocityScore / 500),
           detected_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -196,15 +288,15 @@ export async function GET() {
         continue;
       }
 
-      if (upserted) {
+      if (savedTrend) {
         await supabase.from('trend_snapshots').insert({
-          trend_id: upserted.id,
+          trend_id: savedTrend.id,
           post_count: mediaCount,
           posts_per_hour: postsPerHour,
-          velocity_score: score,
+          velocity_score: velocityScore,
           snapped_at: new Date().toISOString()
         });
-        await runAnomalyDetector(upserted.id, score, status, Math.min(0.85, score / 500));
+        await runAnomalyDetector(savedTrend.id, velocityScore, momentumStatus, Math.min(0.85, velocityScore / 500));
       }
 
       results.instagram++;

@@ -1,0 +1,4 @@
+# Training data files (too large for git)
+*.jsonl
+*.json
+!.gitignore
