@@ -37,7 +37,11 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
-.env*
+.env
+.env.production
+.env.development
+.env.test
+.env.staging
 
 # local dev / scratch files — never push
 extracted_prompts.md
