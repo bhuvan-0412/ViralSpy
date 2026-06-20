@@ -1,0 +1,88 @@
+stages:
+  - install
+  - lint
+  - test
+  - build
+
+# Global variables
+variables:
+  npm_config_cache: "$CI_PROJECT_DIR/.npm"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+# Default container image
+default:
+  image: node:20
+
+# 1. Dependency Installation Stage
+install_dependencies:
+  stage: install
+  script:
+    - npm ci --prefer-offline --no-audit
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+      - node_modules/
+    policy: pull-push
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+# 2. Linting Stage
+linting:
+  stage: lint
+  script:
+    - npm run lint
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+      - node_modules/
+    policy: pull
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+# 3. Testing Stage
+testing:
+  stage: test
+  script:
+    - npm run test
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+      - node_modules/
+    policy: pull
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+# 4. Build Validation Stage
+build_validation:
+  stage: build
+  script:
+    - npm run build
+  cache:
+    - key:
+        files:
+          - package-lock.json
+      paths:
+        - .npm/
+        - node_modules/
+      policy: pull
+    - key: next-cache-$CI_COMMIT_REF_SLUG
+      paths:
+        - .next/cache/
+      policy: pull-push
+  artifacts:
+    name: "viralspy-build-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - .next/
+      - public/
+    expire_in: 7 days
+  rules:
+    - if: $CI_COMMIT_BRANCH
