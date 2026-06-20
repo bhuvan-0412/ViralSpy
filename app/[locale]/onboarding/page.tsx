@@ -388,10 +388,10 @@ export default function OnboardingPage() {
       {/* Header */}
       <header className="max-w-4xl mx-auto w-full py-6 border-b border-gray-200 flex justify-between items-center z-10">
         <div className="text-sm font-bold tracking-widest font-mono uppercase text-[#1A1A1A]">
-          VIRALSPY // ONBOARDING
+          VIRALSPY {"//"} ONBOARDING
         </div>
         <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
-          {getStepName(currentStep)} // STEP 0{currentStep} OF 04
+          {getStepName(currentStep)} {"// STEP 0"}{currentStep}{" OF 04"}
         </div>
       </header>
 
