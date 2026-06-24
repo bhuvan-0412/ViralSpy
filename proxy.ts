@@ -5,7 +5,7 @@ import createIntlMiddleware from 'next-intl/middleware'
 const intlMiddleware = createIntlMiddleware({
   locales: ['en', 'hi', 'te'],
   defaultLocale: 'en',
-  localePrefix: 'as-needed'
+  localePrefix: 'as-needed',
 })
 
 export function proxy(req: NextRequest) {
@@ -24,7 +24,5 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api|auth).*)'
-  ]
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api|auth).*)'],
 }

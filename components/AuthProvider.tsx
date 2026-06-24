@@ -1,44 +1,42 @@
-'use client';
+'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getCurrentUser } from '../lib/supabase';
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import { getCurrentUser } from '../lib/supabase'
 
 interface AuthContextType {
-  user: any;
-  loading: boolean;
-  refreshUser: () => Promise<void>;
+  user: any
+  loading: boolean
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  refreshUser: async () => {}
-});
+  refreshUser: async () => {},
+})
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext)
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   const refreshUser = async () => {
     try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
     } catch (err) {
-      console.error('Session load failed:', err);
+      console.error('Session load failed:', err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    refreshUser();
-  }, []);
+    refreshUser()
+  }, [])
 
   return (
-    <AuthContext.Provider value={{ user, loading, refreshUser }}>
-      {children}
-    </AuthContext.Provider>
-  );
+    <AuthContext.Provider value={{ user, loading, refreshUser }}>{children}</AuthContext.Provider>
+  )
 }

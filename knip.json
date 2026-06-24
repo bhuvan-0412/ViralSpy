@@ -1,0 +1,32 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["app/**/page.tsx", "app/**/route.ts", "app/api/**/route.ts", "i18n.ts"],
+  "project": [
+    "app/**/*.{ts,tsx,js,jsx}",
+    "components/**/*.{ts,tsx,js,jsx}",
+    "lib/**/*.{ts,tsx,js,jsx}",
+    "hooks/**/*.{ts,tsx,js,jsx}",
+    "types/**/*.{ts,tsx,js,jsx}"
+  ],
+  "ignoreDependencies": [
+    "postcss",
+    "tailwindcss",
+    "eslint-config-next",
+    "tsx",
+    "husky",
+    "lint-staged",
+    "prettier",
+    "eslint-config-prettier",
+    "eslint-plugin-security",
+    "@commitlint/cli",
+    "@commitlint/config-conventional",
+    "secretlint",
+    "@secretlint/secretlint-rule-preset-recommend",
+    "knip",
+    "madge",
+    "jscpd",
+    "postcss-load-config"
+  ],
+  "ignore": ["node_modules/**", ".next/**", "scripts/**"],
+  "ignoreExportsUsedInFile": true
+}

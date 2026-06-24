@@ -4,13 +4,20 @@ import * as path from 'path'
 const GROQ_API_KEY = process.env.GROQ_API_KEY || ''
 const OUTPUT_FILE = 'training-data/viralspy-training.jsonl'
 const EXAMPLES_PER_BATCH = 5
-const TOTAL_EXAMPLES = 500
+const TOTAL_EXAMPLES = 2000
 
 // All niches and platforms
 const NICHES = [
-  'fitness', 'food', 'finance', 'fashion', 
-  'beauty', 'tech', 'gaming', 'travel', 
-  'lifestyle', 'education'
+  'fitness',
+  'food',
+  'finance',
+  'fashion',
+  'beauty',
+  'tech',
+  'gaming',
+  'travel',
+  'lifestyle',
+  'education',
 ]
 
 const PLATFORMS = ['YOUTUBE', 'INSTAGRAM', 'REDDIT']
@@ -29,7 +36,7 @@ const TREND_TEMPLATES: Record<string, string[]> = {
     'cortisol face causes',
     'functional fitness over 30',
     'red light therapy for recovery',
-    'nervous system regulation workout'
+    'nervous system regulation workout',
   ],
   food: [
     'cottage cheese ice cream hack',
@@ -41,7 +48,7 @@ const TREND_TEMPLATES: Record<string, string[]> = {
     'smash burger technique',
     'overnight oats 5 ways',
     'gut health smoothie recipe',
-    'protein mac and cheese hack'
+    'protein mac and cheese hack',
   ],
   finance: [
     'index fund vs ETF difference',
@@ -53,7 +60,7 @@ const TREND_TEMPLATES: Record<string, string[]> = {
     'side hustle tax deductions',
     'dividend investing for beginners',
     'real estate vs stock market',
-    'budget paycheck to paycheck'
+    'budget paycheck to paycheck',
   ],
   fashion: [
     'quiet luxury wardrobe essentials',
@@ -65,7 +72,7 @@ const TREND_TEMPLATES: Record<string, string[]> = {
     'dark academia outfits',
     'office siren trend',
     'pinterest girl aesthetic',
-    'mob wife aesthetic fashion'
+    'mob wife aesthetic fashion',
   ],
   beauty: [
     'glass skin routine steps',
@@ -77,7 +84,7 @@ const TREND_TEMPLATES: Record<string, string[]> = {
     'sunscreen for brown skin',
     'hair oiling routine benefits',
     'double cleansing method',
-    'skin cycling routine'
+    'skin cycling routine',
   ],
   tech: [
     'AI tools replacing jobs 2026',
@@ -89,7 +96,7 @@ const TREND_TEMPLATES: Record<string, string[]> = {
     'AI video generation tools',
     'prompt engineering tips',
     'open source AI models 2026',
-    'build SaaS in 24 hours'
+    'build SaaS in 24 hours',
   ],
   gaming: [
     'Elden Ring DLC secrets',
@@ -101,7 +108,7 @@ const TREND_TEMPLATES: Record<string, string[]> = {
     'streaming setup for beginners',
     'indie game hidden gems',
     'gaming with ADHD tips',
-    'competitive gaming diet'
+    'competitive gaming diet',
   ],
   travel: [
     'budget Europe trip 2026',
@@ -113,7 +120,7 @@ const TREND_TEMPLATES: Record<string, string[]> = {
     'travel insurance worth it',
     'packing light one bag method',
     'best time to book flights',
-    'hidden gem destinations 2026'
+    'hidden gem destinations 2026',
   ],
   lifestyle: [
     'morning routine 5am club',
@@ -125,7 +132,7 @@ const TREND_TEMPLATES: Record<string, string[]> = {
     'romanticise your life tips',
     'main character energy meaning',
     'slow living principles',
-    'intentional living guide'
+    'intentional living guide',
   ],
   education: [
     'learn Python in 30 days',
@@ -137,8 +144,8 @@ const TREND_TEMPLATES: Record<string, string[]> = {
     'speed reading techniques',
     'active recall study method',
     'knowledge management system',
-    'learn any skill faster'
-  ]
+    'learn any skill faster',
+  ],
 }
 
 async function generateBriefWithGroq(
@@ -187,22 +194,19 @@ No newlines inside string values.
 Escape any quotes inside strings with backslash.`
 
   try {
-    const res = await fetch(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 1000,
-          temperature: 0.8
-        })
-      }
-    )
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 1000,
+        temperature: 0.8,
+      }),
+    })
 
     const data = await res.json()
     if (!res.ok) {
@@ -240,7 +244,7 @@ function generateVelocityScore(momentum: string): number {
 async function main() {
   console.log('🚀 ViralSpy Training Data Generator')
   console.log('=====================================')
-  
+
   // Create output directory
   const dir = path.dirname(OUTPUT_FILE)
   if (!fs.existsSync(dir)) {
@@ -248,12 +252,11 @@ async function main() {
   }
 
   const PROGRESS_FILE = 'training-data/progress.json'
-  
+
   // Check if file exists and count existing examples
   let existingCount = 0
   if (fs.existsSync(OUTPUT_FILE)) {
-    const existing = fs.readFileSync(OUTPUT_FILE, 'utf-8')
-      .split('\n').filter(Boolean)
+    const existing = fs.readFileSync(OUTPUT_FILE, 'utf-8').split('\n').filter(Boolean)
     existingCount = existing.length
     console.log(`Found ${existingCount} existing examples, \n    appending new ones...`)
   } else {
@@ -277,7 +280,7 @@ async function main() {
       console.error('Error reading progress file:', e)
     }
   }
-  
+
   const startTime = Date.now()
 
   console.log(`\n📊 Generating ${TOTAL_EXAMPLES} examples...\n`)
@@ -292,16 +295,13 @@ async function main() {
 
     process.stdout.write(
       `\r⏳ Progress: ${i + 1}/${TOTAL_EXAMPLES} (${existingCount} existing) ` +
-      `(${generated} success, ${failed} failed)`
+        `(${generated} success, ${failed} failed)`
     )
 
     let brief = null
     let hasFailed = false
     try {
-      brief = await generateBriefWithGroq(
-        trendName, niche, platform, 
-        velocityScore, momentum
-      )
+      brief = await generateBriefWithGroq(trendName, niche, platform, velocityScore, momentum)
     } catch (e: any) {
       const error = e.message || ''
       if (error.includes('tokens per day')) {
@@ -323,7 +323,7 @@ async function main() {
           niche,
           platform,
           velocity_score: velocityScore,
-          momentum_status: momentum
+          momentum_status: momentum,
         },
         // Output (what the model should generate)
         output: brief,
@@ -331,15 +331,12 @@ async function main() {
         metadata: {
           generated_at: new Date().toISOString(),
           model: 'llama-3.3-70b-versatile',
-          version: '1.0'
-        }
+          version: '1.0',
+        },
       }
 
       // Append to JSONL file
-      fs.appendFileSync(
-        OUTPUT_FILE,
-        JSON.stringify(trainingExample) + '\n'
-      )
+      fs.appendFileSync(OUTPUT_FILE, JSON.stringify(trainingExample) + '\n')
       generated++
     } else if (!hasFailed) {
       failed++
@@ -351,9 +348,9 @@ async function main() {
       JSON.stringify({ completed: existingCount + generated, last_index: i })
     )
 
-    // Rate limiting — Groq free tier allows 
+    // Rate limiting — Groq free tier allows
     // ~30 requests/minute
-    await new Promise(r => setTimeout(r, 3000))
+    await new Promise((r) => setTimeout(r, 3000))
   }
 
   // If completed successfully, delete the progress file
@@ -375,43 +372,40 @@ async function main() {
   console.log(`✗ Failed: ${failed} examples`)
   console.log(`⏱ Time: ${minutes}m ${seconds}s`)
   console.log(`📁 Saved to: ${OUTPUT_FILE}`)
-  console.log(`📦 File size: ${
-    fs.existsSync(OUTPUT_FILE) ? (fs.statSync(OUTPUT_FILE).size / 1024 / 1024).toFixed(2) : '0.00'
-  } MB`)
-  
+  console.log(
+    `📦 File size: ${
+      fs.existsSync(OUTPUT_FILE) ? (fs.statSync(OUTPUT_FILE).size / 1024 / 1024).toFixed(2) : '0.00'
+    } MB`
+  )
+
   // Generate stats
   console.log('\n📊 Dataset Stats:')
   const fileExists = fs.existsSync(OUTPUT_FILE)
-  const lines = fileExists ? fs.readFileSync(OUTPUT_FILE, 'utf-8')
-    .split('\n').filter(Boolean) : []
-  
+  const lines = fileExists ? fs.readFileSync(OUTPUT_FILE, 'utf-8').split('\n').filter(Boolean) : []
+
   if (lines.length > 0) {
-    const examples = lines.map(l => JSON.parse(l))
-    
+    const examples = lines.map((l) => JSON.parse(l))
+
     const nicheCount: Record<string, number> = {}
     const platformCount: Record<string, number> = {}
     const momentumCount: Record<string, number> = {}
-    
-    examples.forEach(ex => {
-      nicheCount[ex.input.niche] = 
-        (nicheCount[ex.input.niche] || 0) + 1
-      platformCount[ex.input.platform] = 
-        (platformCount[ex.input.platform] || 0) + 1
-      momentumCount[ex.input.momentum_status] = 
-        (momentumCount[ex.input.momentum_status] || 0) + 1
+
+    examples.forEach((ex) => {
+      nicheCount[ex.input.niche] = (nicheCount[ex.input.niche] || 0) + 1
+      platformCount[ex.input.platform] = (platformCount[ex.input.platform] || 0) + 1
+      momentumCount[ex.input.momentum_status] = (momentumCount[ex.input.momentum_status] || 0) + 1
     })
-    
+
     console.log('\nBy Niche:')
-    Object.entries(nicheCount).sort((a,b) => b[1]-a[1])
-      .forEach(([k,v]) => console.log(`  ${k}: ${v}`))
-    
+    Object.entries(nicheCount)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([k, v]) => console.log(`  ${k}: ${v}`))
+
     console.log('\nBy Platform:')
-    Object.entries(platformCount)
-      .forEach(([k,v]) => console.log(`  ${k}: ${v}`))
-      
+    Object.entries(platformCount).forEach(([k, v]) => console.log(`  ${k}: ${v}`))
+
     console.log('\nBy Momentum:')
-    Object.entries(momentumCount)
-      .forEach(([k,v]) => console.log(`  ${k}: ${v}`))
+    Object.entries(momentumCount).forEach(([k, v]) => console.log(`  ${k}: ${v}`))
   } else {
     console.log('No examples generated.')
   }

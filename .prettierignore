@@ -1,0 +1,24 @@
+# Build and package outputs
+node_modules/
+.next/
+out/
+build/
+dist/
+.vercel/
+
+# TypeScript build info
+*.tsbuildinfo
+next-env.d.ts
+
+# Lockfiles and system files
+package-lock.json
+.DS_Store
+
+# Env and secret files
+.env*
+*.pem
+
+# Scratch and local scripts
+extracted_prompts.md
+scratch_extract.js
+training-data/

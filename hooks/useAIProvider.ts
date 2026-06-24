@@ -21,7 +21,7 @@ const DEFAULT_CONFIG: AIConfig = {
   byokBaseUrl: 'https://api.openai.com/v1',
   byokModel: '',
   ollamaUrl: 'http://localhost:11434',
-  ollamaModel: 'llama3'
+  ollamaModel: 'llama3',
 }
 
 export function useAIProvider() {
@@ -30,14 +30,15 @@ export function useAIProvider() {
   useEffect(() => {
     const stored = localStorage.getItem('viralspy_ai_config')
     if (stored) {
-      try { setConfig(JSON.parse(stored)) } catch {}
+      try {
+        setConfig(JSON.parse(stored))
+      } catch {}
     }
   }, [])
 
   const saveConfig = (newConfig: AIConfig) => {
     setConfig(newConfig)
-    localStorage.setItem('viralspy_ai_config', 
-      JSON.stringify(newConfig))
+    localStorage.setItem('viralspy_ai_config', JSON.stringify(newConfig))
   }
 
   const getHeaders = (): Record<string, string> => ({
@@ -60,11 +61,11 @@ export async function detectOllamaUrl(): Promise<string> {
     'http://172.29.130.173:11434', // WSL common range
     'http://172.17.0.1:11434',
   ]
-  
+
   for (const url of urlsToTry) {
     try {
       const res = await fetch(`/api/ollama-test?url=${url}`, {
-        signal: AbortSignal.timeout(2000)
+        signal: AbortSignal.timeout(2000),
       })
       const data = await res.json()
       if (data.connected) return url

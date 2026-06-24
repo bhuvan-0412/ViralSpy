@@ -1,36 +1,36 @@
-'use client';
+'use client'
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../components/AuthProvider';
-import { supabase } from '@/lib/supabase';
-import { Sparkles, Eye, ArrowRight, Shield } from 'lucide-react';
+import React, { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '../../components/AuthProvider'
+import { supabase } from '@/lib/supabase'
+import { Sparkles, Eye, ArrowRight, Shield } from 'lucide-react'
 
 export default function EntryPage() {
-  const router = useRouter();
-  const { loading, refreshUser } = useAuth();
+  const router = useRouter()
+  const { loading, refreshUser } = useAuth()
 
   useEffect(() => {
     if (supabase) {
       // Check if already logged in
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
-          router.replace('/dashboard');
+          router.replace('/dashboard')
         }
-      });
+      })
 
       // Listen for auth changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          if (event === 'SIGNED_IN' && session) {
-            router.replace('/dashboard');
-          }
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          router.replace('/dashboard')
         }
-      );
+      })
 
-      return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe()
     }
-  }, [router]);
+  }, [router])
 
   const handleGoogleLogin = async () => {
     console.log('Google login clicked')
@@ -42,8 +42,8 @@ export default function EntryPage() {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-          }
-        }
+          },
+        },
       })
       if (error) {
         console.error('OAuth error:', error.message)
@@ -58,9 +58,11 @@ export default function EntryPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#F7F5F2] text-[#6B7280] space-y-3">
         <Eye className="h-8 w-8 text-[#FF6B4A] animate-pulse" />
-        <div className="text-xs font-mono tracking-widest uppercase animate-pulse">Loading Terminal...</div>
+        <div className="text-xs font-mono tracking-widest uppercase animate-pulse">
+          Loading Terminal...
+        </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -69,7 +71,6 @@ export default function EntryPage() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-orange-400/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="flex-grow flex flex-col lg:flex-row items-center justify-center max-w-7xl mx-auto w-full gap-12 py-12 lg:py-24 z-10">
-        
         {/* Left column info */}
         <div className="flex-1 text-center lg:text-left space-y-6 max-w-xl animate-fade-up delay-0">
           <div className="inline-flex items-center space-x-2 bg-orange-50 border border-orange-200 rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide uppercase text-[#FF6B4A]">
@@ -82,18 +83,28 @@ export default function EntryPage() {
           </h1>
 
           <p className="text-gray-600 text-sm leading-relaxed max-w-lg">
-            Stop guessing what to film. ViralSpy detects YouTube Shorts, Instagram Reels, and Reddit trends 48 hours before they peak, generating strategist-grade content briefs automatically.
+            Stop guessing what to film. ViralSpy detects YouTube Shorts, Instagram Reels, and Reddit
+            trends 48 hours before they peak, generating strategist-grade content briefs
+            automatically.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6 text-left border-t border-gray-200">
             <div className="space-y-1">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#FF6B4A]">Velocity Engine</h4>
-              <p className="text-[12px] text-gray-500 leading-normal">Detect growth acceleration relative to baseline 24h average rates.</p>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#FF6B4A]">
+                Velocity Engine
+              </h4>
+              <p className="text-[12px] text-gray-500 leading-normal">
+                Detect growth acceleration relative to baseline 24h average rates.
+              </p>
             </div>
 
             <div className="space-y-1">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#FF6B4A]">Strategist Briefs</h4>
-              <p className="text-[12px] text-gray-500 leading-normal">Get killer scroll-stopping hooks, video angles, and optimized scheduling.</p>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#FF6B4A]">
+                Strategist Briefs
+              </h4>
+              <p className="text-[12px] text-gray-500 leading-normal">
+                Get killer scroll-stopping hooks, video angles, and optimized scheduling.
+              </p>
             </div>
           </div>
         </div>
@@ -105,8 +116,12 @@ export default function EntryPage() {
               <div className="p-3 bg-orange-50 border border-orange-100 rounded-2xl flex items-center justify-center mb-4 text-[#FF6B4A]">
                 <Eye className="h-7 w-7" />
               </div>
-              <h2 className="text-xl font-bold tracking-tight text-[#1A1A1A] uppercase font-sans">Access Trend Signals</h2>
-              <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider">Identify rising breakouts</p>
+              <h2 className="text-xl font-bold tracking-tight text-[#1A1A1A] uppercase font-sans">
+                Access Trend Signals
+              </h2>
+              <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider">
+                Identify rising breakouts
+              </p>
             </div>
 
             <div className="space-y-4">
@@ -127,17 +142,20 @@ export default function EntryPage() {
             </div>
           </div>
         </div>
-
       </div>
 
       {/* Footer */}
       <footer className="w-full max-w-7xl mx-auto py-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500">
         <div>© 2026 ViralSpy. All rights reserved.</div>
         <div className="flex space-x-6 mt-3 sm:mt-0">
-          <a href="#" className="hover:text-[#FF6B4A] transition-colors">Privacy</a>
-          <a href="#" className="hover:text-[#FF6B4A] transition-colors">Terms</a>
+          <a href="#" className="hover:text-[#FF6B4A] transition-colors">
+            Privacy
+          </a>
+          <a href="#" className="hover:text-[#FF6B4A] transition-colors">
+            Terms
+          </a>
         </div>
       </footer>
     </div>
-  );
+  )
 }

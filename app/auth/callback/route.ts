@@ -9,9 +9,11 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = createRouteHandlerClient({ cookies })
     await supabase.auth.exchangeCodeForSession(code)
-    
-    const { data: { user } } = await supabase.auth.getUser()
-    
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
     if (user) {
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -20,18 +22,12 @@ export async function GET(request: Request) {
         .single()
 
       if (!profile || !profile.onboarded) {
-        return NextResponse.redirect(
-          new URL('/onboarding', requestUrl.origin)
-        )
+        return NextResponse.redirect(new URL('/onboarding', requestUrl.origin))
       }
 
-      return NextResponse.redirect(
-        new URL('/dashboard', requestUrl.origin)
-      )
+      return NextResponse.redirect(new URL('/dashboard', requestUrl.origin))
     }
   }
 
-  return NextResponse.redirect(
-    new URL('/', requestUrl.origin)
-  )
+  return NextResponse.redirect(new URL('/', requestUrl.origin))
 }

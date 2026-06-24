@@ -6,8 +6,8 @@ stages:
 
 # Global variables
 variables:
-  npm_config_cache: "$CI_PROJECT_DIR/.npm"
-  NEXT_TELEMETRY_DISABLED: "1"
+  npm_config_cache: '$CI_PROJECT_DIR/.npm'
+  NEXT_TELEMETRY_DISABLED: '1'
 
 # Default container image
 default:
@@ -34,6 +34,11 @@ linting:
   stage: lint
   script:
     - npm run lint
+    - npm run format:check
+    - npm run check:circular
+    - npm run check:duplicate
+    - npm run check:deadcode
+    - npm run check:licenses
   cache:
     key:
       files:
@@ -79,7 +84,7 @@ build_validation:
         - .next/cache/
       policy: pull-push
   artifacts:
-    name: "viralspy-build-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA"
+    name: 'viralspy-build-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA'
     paths:
       - .next/
       - public/

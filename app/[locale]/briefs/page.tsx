@@ -1,87 +1,87 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState } from 'react';
-import { createClient, isDemoModeActive } from '../../../lib/supabase';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import Logo from '../../../components/Logo';
-import { ArrowLeft, Bookmark, Trash2, ExternalLink } from 'lucide-react';
+import React, { useEffect, useState } from 'react'
+import { createClient, isDemoModeActive } from '../../../lib/supabase'
+import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
+import Logo from '../../../components/Logo'
+import { ArrowLeft, Bookmark, Trash2, ExternalLink } from 'lucide-react'
 
 interface SavedBrief {
-  id: string;
-  saved_at: string;
+  id: string
+  saved_at: string
   trend: {
-    id: string;
-    name: string;
-    niche: string;
-    platform: string;
-    velocity_score: number;
-    momentum_status: string;
-  };
+    id: string
+    name: string
+    niche: string
+    platform: string
+    velocity_score: number
+    momentum_status: string
+  }
   brief: {
-    id: string;
-    hook: string;
-    angles: Array<{ title: string; description: string }>;
-    format: string;
-    hashtags: string[];
-    best_post_time: string;
-    estimated_reach: string;
-    created_at: string;
-  } | null;
+    id: string
+    hook: string
+    angles: Array<{ title: string; description: string }>
+    format: string
+    hashtags: string[]
+    best_post_time: string
+    estimated_reach: string
+    created_at: string
+  } | null
 }
 
 export default function BriefsPage() {
-  const router = useRouter();
-  const locale = useLocale();
-  const [savedBriefs, setSavedBriefs] = useState<SavedBrief[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const router = useRouter()
+  const locale = useLocale()
+  const [savedBriefs, setSavedBriefs] = useState<SavedBrief[]>([])
+  const [loading, setLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const getDashboardPath = () => 
-    locale === 'en' ? '/dashboard' : `/${locale}/dashboard`;
-  const getBriefPath = (id: string) => 
-    locale === 'en' ? `/brief/${id}` : `/${locale}/brief/${id}`;
+  const getDashboardPath = () => (locale === 'en' ? '/dashboard' : `/${locale}/dashboard`)
+  const getBriefPath = (id: string) => (locale === 'en' ? `/brief/${id}` : `/${locale}/brief/${id}`)
 
   useEffect(() => {
     let mounted = true
-    
+
     const init = async () => {
       const supabase = createClient()
-      
+
       // Listen for auth state
-      const { data: { subscription } } = 
-        supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            if (!mounted) return
-            
-            if (session?.user) {
-              // User is logged in — load briefs
-              await loadSavedBriefs(session.user.id)
-            } else if (event === 'SIGNED_OUT') {
-              router.push('/')
-            }
-            // If INITIAL_SESSION with no user,
-            // wait — don't redirect immediately
-          }
-        )
-      
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!mounted) return
+
+        if (session?.user) {
+          // User is logged in — load briefs
+          await loadSavedBriefs(session.user.id)
+        } else if (event === 'SIGNED_OUT') {
+          router.push('/')
+        }
+        // If INITIAL_SESSION with no user,
+        // wait — don't redirect immediately
+      })
+
       // Also check existing session immediately
-      const { data: { session } } = 
-        await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
       if (session?.user && mounted) {
         await loadSavedBriefs(session.user.id)
       } else if (isDemoModeActive() && mounted) {
         await loadSavedBriefs('demo-guest-uuid-1234-5678')
       }
-      
+
       if (mounted) setLoading(false)
-      
+
       return () => subscription.unsubscribe()
     }
-    
+
     init()
-    return () => { mounted = false }
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const loadSavedBriefs = async (userId: string) => {
@@ -94,17 +94,19 @@ export default function BriefsPage() {
       }
 
       const supabase = createClient()
-      
+
       const { data: saved, error } = await supabase
         .from('saved_trends')
-        .select(`
+        .select(
+          `
           id,
           saved_at,
           trend:trends(
             id, name, niche, platform,
             velocity_score, momentum_status
           )
-        `)
+        `
+        )
         .eq('user_id', userId)
         .order('saved_at', { ascending: false })
 
@@ -122,7 +124,7 @@ export default function BriefsPage() {
           return { ...item, brief: brief || null }
         })
       )
-      
+
       setSavedBriefs(enriched)
     } catch (e) {
       console.error('Error loading saved briefs:', e)
@@ -132,37 +134,32 @@ export default function BriefsPage() {
   }
 
   const handleUnsave = async (savedId: string) => {
-    setDeletingId(savedId);
+    setDeletingId(savedId)
     try {
       if (isDemoModeActive()) {
-        const localSaved = localStorage.getItem('viralspy_demo_trends');
-        let savedList = localSaved ? JSON.parse(localSaved) : [];
-        savedList = savedList.filter((item: any) => item.id !== savedId);
-        localStorage.setItem('viralspy_demo_trends', JSON.stringify(savedList));
-        setSavedBriefs((prev) => 
-          prev.filter((b) => b.id !== savedId));
-        return;
+        const localSaved = localStorage.getItem('viralspy_demo_trends')
+        let savedList = localSaved ? JSON.parse(localSaved) : []
+        savedList = savedList.filter((item: any) => item.id !== savedId)
+        localStorage.setItem('viralspy_demo_trends', JSON.stringify(savedList))
+        setSavedBriefs((prev) => prev.filter((b) => b.id !== savedId))
+        return
       }
 
-      const supabase = createClient();
-      await supabase
-        .from('saved_trends')
-        .delete()
-        .eq('id', savedId);
-      setSavedBriefs((prev) => 
-        prev.filter((b) => b.id !== savedId));
+      const supabase = createClient()
+      await supabase.from('saved_trends').delete().eq('id', savedId)
+      setSavedBriefs((prev) => prev.filter((b) => b.id !== savedId))
     } catch (e) {
-      console.error('Error unsaving:', e);
+      console.error('Error unsaving:', e)
     } finally {
-      setDeletingId(null);
+      setDeletingId(null)
     }
-  };
+  }
 
   const getMomentumColor = (status: string) => {
-    if (status === 'EXPLODING') return 'text-red-500 bg-red-55/10 border border-red-200';
-    if (status === 'RISING') return 'text-amber-600 bg-amber-55/10 border border-amber-200';
-    return 'text-gray-500 bg-gray-100';
-  };
+    if (status === 'EXPLODING') return 'text-red-500 bg-red-55/10 border border-red-200'
+    if (status === 'RISING') return 'text-amber-600 bg-amber-55/10 border border-amber-200'
+    return 'text-gray-500 bg-gray-100'
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F5F2] text-[#1A1A1A] flex flex-col justify-between font-sans">
@@ -189,9 +186,7 @@ export default function BriefsPage() {
                 <Bookmark className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-[#1A1A1A]">
-                  My Briefs
-                </h1>
+                <h1 className="text-2xl font-black text-[#1A1A1A]">My Briefs</h1>
                 <p className="text-sm text-gray-500">
                   {savedBriefs.length} saved brief
                   {savedBriefs.length !== 1 ? 's' : ''}
@@ -204,7 +199,10 @@ export default function BriefsPage() {
           {loading && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white rounded-2xl p-5 border border-gray-200 animate-pulse shadow-card">
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl p-5 border border-gray-200 animate-pulse shadow-card"
+                >
                   <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
                   <div className="h-3 bg-gray-100 rounded w-1/2 mb-4" />
                   <div className="h-12 bg-gray-100 rounded mb-3" />
@@ -222,9 +220,7 @@ export default function BriefsPage() {
           {!loading && savedBriefs.length === 0 && (
             <div className="text-center py-20 bg-white border border-gray-200 rounded-2xl p-8 shadow-card max-w-md mx-auto space-y-4">
               <div className="text-6xl mb-2">📋</div>
-              <h2 className="text-xl font-bold text-gray-705">
-                No saved briefs yet
-              </h2>
+              <h2 className="text-xl font-bold text-gray-705">No saved briefs yet</h2>
               <p className="text-gray-500 text-xs leading-relaxed max-w-sm mx-auto">
                 Generate a brief and click "Save Brief" to see it here.
               </p>
@@ -241,9 +237,10 @@ export default function BriefsPage() {
           {!loading && savedBriefs.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {savedBriefs.map((item) => (
-                <div key={item.id} 
-                  className="bg-white rounded-2xl border border-gray-200 shadow-card overflow-hidden hover:shadow-md transition-shadow flex flex-col justify-between border-l-4 border-l-[#FF6B4A]">
-                  
+                <div
+                  key={item.id}
+                  className="bg-white rounded-2xl border border-gray-200 shadow-card overflow-hidden hover:shadow-md transition-shadow flex flex-col justify-between border-l-4 border-l-[#FF6B4A]"
+                >
                   {/* Card header */}
                   <div className="p-5 border-b border-gray-100">
                     <div className="flex items-start justify-between gap-2">
@@ -252,7 +249,9 @@ export default function BriefsPage() {
                           <span className="text-[10px] font-bold uppercase tracking-wider text-gray-450">
                             {item.trend?.platform}
                           </span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${getMomentumColor(item.trend?.momentum_status || '')}`}>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${getMomentumColor(item.trend?.momentum_status || '')}`}
+                          >
                             {item.trend?.momentum_status}
                           </span>
                         </div>
@@ -260,10 +259,11 @@ export default function BriefsPage() {
                           {item.trend?.name}
                         </h3>
                         <p className="text-[10px] text-gray-400 font-semibold mt-1">
-                          Saved {new Date(item.saved_at).toLocaleDateString('en-IN', {
+                          Saved{' '}
+                          {new Date(item.saved_at).toLocaleDateString('en-IN', {
                             day: 'numeric',
                             month: 'short',
-                            year: 'numeric'
+                            year: 'numeric',
                           })}
                         </p>
                       </div>
@@ -275,8 +275,19 @@ export default function BriefsPage() {
                       >
                         {deletingId === item.id ? (
                           <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                            />
                           </svg>
                         ) : (
                           <Trash2 className="h-4 w-4" />
@@ -301,14 +312,16 @@ export default function BriefsPage() {
 
                         {/* Hashtags */}
                         <div className="flex flex-wrap gap-1.5">
-                          {(Array.isArray(item.brief.hashtags) 
-                            ? item.brief.hashtags 
-                            : []
-                          ).slice(0, 4).map((tag: string, i: number) => (
-                            <span key={i} className="text-[10px] font-bold bg-gray-50 border border-gray-150 text-gray-600 px-2.5 py-1 rounded-full">
-                              #{tag.replace(/^#/, '')}
-                            </span>
-                          ))}
+                          {(Array.isArray(item.brief.hashtags) ? item.brief.hashtags : [])
+                            .slice(0, 4)
+                            .map((tag: string, i: number) => (
+                              <span
+                                key={i}
+                                className="text-[10px] font-bold bg-gray-50 border border-gray-150 text-gray-600 px-2.5 py-1 rounded-full"
+                              >
+                                #{tag.replace(/^#/, '')}
+                              </span>
+                            ))}
                         </div>
                       </div>
 
@@ -352,5 +365,5 @@ export default function BriefsPage() {
         <div>© 2026 ViralSpy.</div>
       </footer>
     </div>
-  );
+  )
 }

@@ -12,9 +12,7 @@ export async function POST(req: Request) {
   const body = await req.json()
 
   // 1. Save feedback to Supabase
-  const { data, error } = await supabase
-    .from('feedback')
-    .insert([body])
+  const { data, error } = await supabase.from('feedback').insert([body])
 
   if (error) {
     return Response.json({ error: error.message }, { status: 500 })
@@ -48,7 +46,7 @@ export async function POST(req: Request) {
             <tr><td><b>Suggestions</b></td><td>${body.suggestions || '—'}</td></tr>
             <tr><td><b>Submitted At</b></td><td>${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td></tr>
           </table>
-        `
+        `,
       })
     } catch (emailErr: any) {
       // Log but don't fail — feedback is already saved

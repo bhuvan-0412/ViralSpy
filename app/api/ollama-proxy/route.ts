@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
 
 /**
  * POST /api/ollama-proxy
@@ -11,24 +11,24 @@ import { NextResponse } from 'next/server';
  * Body: { ollamaUrl: string, ollamaModel: string, prompt: string }
  */
 export async function POST(request: Request) {
-  let body: { ollamaUrl?: string; ollamaModel?: string; prompt?: string };
+  let body: { ollamaUrl?: string; ollamaModel?: string; prompt?: string }
 
   try {
-    body = await request.json();
+    body = await request.json()
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { ollamaUrl, ollamaModel, prompt } = body;
+  const { ollamaUrl, ollamaModel, prompt } = body
 
   if (!ollamaUrl || !prompt) {
     return NextResponse.json(
       { error: 'Missing required fields: ollamaUrl, prompt' },
       { status: 400 }
-    );
+    )
   }
 
-  const cleanUrl = ollamaUrl.replace(/\/$/, '');
+  const cleanUrl = ollamaUrl.replace(/\/$/, '')
 
   try {
     const res = await fetch(`${cleanUrl}/api/generate`, {
@@ -37,20 +37,20 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: ollamaModel || 'llama3',
         prompt,
-        stream: false
+        stream: false,
       }),
-      signal: AbortSignal.timeout(120_000) // 2-minute timeout
-    });
+      signal: AbortSignal.timeout(120_000), // 2-minute timeout
+    })
 
     if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new Error(`Ollama error: HTTP ${res.status}${text ? ` — ${text}` : ''}`);
+      const text = await res.text().catch(() => '')
+      throw new Error(`Ollama error: HTTP ${res.status}${text ? ` — ${text}` : ''}`)
     }
 
-    const data = await res.json();
-    return NextResponse.json({ response: data.response });
+    const data = await res.json()
+    return NextResponse.json({ response: data.response })
   } catch (e: any) {
-    console.error('[ollama-proxy] error:', e.message);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('[ollama-proxy] error:', e.message)
+    return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }

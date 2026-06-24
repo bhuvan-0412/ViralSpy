@@ -9,7 +9,7 @@ A full-stack trend prediction SaaS for content creators. ViralSpy detects YouTub
 > **Velocity over Vanity.**
 > Total view counts are a trailing metric. ViralSpy tracks velocity to capture breakout topics before the algorithm becomes saturated.
 
-This application is built using the **SpecKit Design System**—a minimalist, cinematic magazine-style interface. 
+This application is built using the **SpecKit Design System**—a minimalist, cinematic magazine-style interface.
 
 - **Background:** `#1A1A1A` (Strict Deep Charcoal-Black)
 - **Text & Accents:** `#F4F2ED` (Warm Print-Style Off-White)
@@ -66,31 +66,39 @@ ViralSpy/
 ## ⚙️ Setup & Execution
 
 ### 1. Configure Environment
+
 Create a `.env.local` file in the root directory:
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 GEMINI_API_KEY=your-gemini-api-key
 ```
-*Note: If these remain empty or placeholders, ViralSpy automatically runs in **Guest Demo Mode**, using local mock generators and local storage.*
+
+_Note: If these remain empty or placeholders, ViralSpy automatically runs in **Guest Demo Mode**, using local mock generators and local storage._
 
 ### 2. Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### 3. Database Initialization
+
 If using a live Supabase project, execute the SQL schema in [supabase_schema.sql](file:///d:/ViralSpy/supabase_schema.sql) in your Supabase SQL Editor.
 
 ### 4. Running Locally
+
 Run the Next.js dev server:
+
 ```bash
 npm run dev
 ```
 
 ### 5. Seeding Data
+
 Once running, ping `/api/seed` (or click **"RE-SEED DEMO"** on the dashboard) to load the initial 20 trend profiles into the database.
 
 ---
 
-💼 *ViralSpy*
+💼 _ViralSpy_

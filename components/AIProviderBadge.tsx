@@ -1,70 +1,77 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import { useAIProvider } from '../hooks/useAIProvider';
-import { Check } from 'lucide-react';
-import { useLocale } from 'next-intl';
-import ProviderSetupGuide, { GuideProvider } from './ProviderSetupGuide';
+import React, { useState } from 'react'
+import { useAIProvider } from '../hooks/useAIProvider'
+import { Check } from 'lucide-react'
+import { useLocale } from 'next-intl'
+import ProviderSetupGuide, { GuideProvider } from './ProviderSetupGuide'
 
 export default function AIProviderBadge() {
-  const locale = useLocale();
-  const { config, saveConfig } = useAIProvider();
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const locale = useLocale()
+  const { config, saveConfig } = useAIProvider()
+  const [isGuideOpen, setIsGuideOpen] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
 
   const handleModalComplete = (newConfig: any) => {
-    saveConfig(newConfig);
+    saveConfig(newConfig)
 
     // Dispatch local storage update event for other listeners
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('storage'));
-      window.dispatchEvent(new Event('viralspy_ai_config_updated'));
+      window.dispatchEvent(new Event('storage'))
+      window.dispatchEvent(new Event('viralspy_ai_config_updated'))
     }
 
     const labels: Record<string, string> = {
       ollama: 'Local AI',
-      byok: newConfig.byokProvider === 'gemini' ? 'Gemini' : newConfig.byokProvider === 'custom' ? 'Custom API' : newConfig.byokModel === 'llama-3.3-70b-versatile' ? 'Groq' : 'GPT-4o'
-    };
+      byok:
+        newConfig.byokProvider === 'gemini'
+          ? 'Gemini'
+          : newConfig.byokProvider === 'custom'
+            ? 'Custom API'
+            : newConfig.byokModel === 'llama-3.3-70b-versatile'
+              ? 'Groq'
+              : 'GPT-4o',
+    }
 
-    setToast(`Updated to ${labels[newConfig.provider] || 'Local AI'}`);
-    setIsGuideOpen(false);
+    setToast(`Updated to ${labels[newConfig.provider] || 'Local AI'}`)
+    setIsGuideOpen(false)
 
     // Reload page to re-initialize client clients
     setTimeout(() => {
-      setToast(null);
-      window.location.reload();
-    }, 1200);
-  };
+      setToast(null)
+      window.location.reload()
+    }, 1200)
+  }
 
   const getPillLabel = () => {
     if (config.provider === 'ollama') {
-      return <span className="text-green-655 font-bold flex items-center gap-1">🦙 Local AI</span>;
+      return <span className="text-green-655 font-bold flex items-center gap-1">🦙 Local AI</span>
     }
-    
+
     // BYOK cases
-    const modelName = config.byokModel;
+    const modelName = config.byokModel
     if (config.byokProvider === 'gemini') {
-      return <span className="text-blue-500 font-bold flex items-center gap-1">🔑 Gemini</span>;
+      return <span className="text-blue-500 font-bold flex items-center gap-1">🔑 Gemini</span>
     }
     if (config.byokProvider === 'custom') {
-      return <span className="text-gray-500 font-bold flex items-center gap-1">🔑 Custom API</span>;
+      return <span className="text-gray-500 font-bold flex items-center gap-1">🔑 Custom API</span>
     }
     if (modelName === 'llama-3.3-70b-versatile') {
-      return <span className="text-purple-650 font-bold flex items-center gap-1">🔑 Groq</span>;
+      return <span className="text-purple-650 font-bold flex items-center gap-1">🔑 Groq</span>
     }
     if (modelName === 'gpt-4o') {
-      return <span className="text-gray-900 font-bold flex items-center gap-1">🔑 GPT-4o</span>;
+      return <span className="text-gray-900 font-bold flex items-center gap-1">🔑 GPT-4o</span>
     }
-    return <span className="text-amber-600 font-bold flex items-center gap-1">🔑 My Key</span>;
-  };
+    return <span className="text-amber-600 font-bold flex items-center gap-1">🔑 My Key</span>
+  }
 
   const getGuideProviderMapping = (): GuideProvider => {
-    return config.provider === 'ollama' ? 'ollama' : 'byok';
-  };
+    return config.provider === 'ollama' ? 'ollama' : 'byok'
+  }
 
   const getLocalizedSettingsPath = () => {
-    return locale === 'en' ? '/settings#ai-provider' : `/${locale}/settings#ai-provider`;
-  };
+    return locale === 'en' ? '/settings#ai-provider' : `/${locale}/settings#ai-provider`
+  }
 
   return (
     <div className="relative inline-block">
@@ -88,7 +95,7 @@ export default function AIProviderBadge() {
           byokBaseUrl: config.byokBaseUrl,
           byokModel: config.byokModel,
           ollamaUrl: config.ollamaUrl,
-          ollamaModel: config.ollamaModel
+          ollamaModel: config.ollamaModel,
         }}
       />
 
@@ -100,5 +107,5 @@ export default function AIProviderBadge() {
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -14,6 +14,7 @@ Generate implementation code from a structured SPDD (Structured Prompt-Driven De
 1. **If no input provided, ask for the prompt file**
 
    Use the **AskUserQuestion tool** to ask:
+
    > "Please provide the path to the structured prompt file (e.g., `@spdd/prompt/xxx.md`)."
 
    **IMPORTANT**: Do NOT proceed without a valid prompt file path.
@@ -21,16 +22,16 @@ Generate implementation code from a structured SPDD (Structured Prompt-Driven De
 2. **Read and parse the structured prompt file**
 
    Read the prompt file and extract the REASONS Canvas sections:
-   
-   | Section | Purpose | Usage |
-   |---------|---------|-------|
-   | **R** - Requirements | Overall goal and DoD | Understand the business context |
-   | **E** - Entities | Domain model and relationships | Reference for class design |
-   | **A** - Approach | Implementation strategy | Guide architectural decisions |
-   | **S** - Structure | Components and dependencies | Verify layering and relationships |
-   | **O** - Operations | Concrete implementation tasks | **Execute in defined order** |
-   | **N** - Norms | Engineering standards | Apply to all generated code |
-   | **S** - Safeguards | Non-negotiable constraints | Enforce strictly |
+
+   | Section              | Purpose                        | Usage                             |
+   | -------------------- | ------------------------------ | --------------------------------- |
+   | **R** - Requirements | Overall goal and DoD           | Understand the business context   |
+   | **E** - Entities     | Domain model and relationships | Reference for class design        |
+   | **A** - Approach     | Implementation strategy        | Guide architectural decisions     |
+   | **S** - Structure    | Components and dependencies    | Verify layering and relationships |
+   | **O** - Operations   | Concrete implementation tasks  | **Execute in defined order**      |
+   | **N** - Norms        | Engineering standards          | Apply to all generated code       |
+   | **S** - Safeguards   | Non-negotiable constraints     | Enforce strictly                  |
 
    **IMPORTANT**: Read the ENTIRE file carefully. Each section provides critical guidance.
 
@@ -47,24 +48,24 @@ Generate implementation code from a structured SPDD (Structured Prompt-Driven De
 4. **Validate the Operations sequence**
 
    Review the **Operations** section to verify:
-   
+
    a. **Dependency order is correct**:
-      - Classes with no dependencies come first (enums, constants)
-      - Classes depend only on previously defined classes
-      - No circular dependencies exist
-   
+   - Classes with no dependencies come first (enums, constants)
+   - Classes depend only on previously defined classes
+   - No circular dependencies exist
+
    b. **Task decomposition is complete**:
-      - Each operation is atomic and testable
-      - No logical gaps between operations
-      - All components mentioned in Structure are covered
-   
+   - Each operation is atomic and testable
+   - No logical gaps between operations
+   - All components mentioned in Structure are covered
+
    c. **Consistency with Structure section**:
-      - Inheritance relationships match
-      - Dependencies match
-      - Layered architecture is respected
+   - Inheritance relationships match
+   - Dependencies match
+   - Layered architecture is respected
 
    **If issues are found**: Report to user and suggest prompt modifications before proceeding.
-   
+
    **IMPORTANT**: Do NOT re-plan the sequence. The Operations order is the designed execution order from the Abstraction phase.
 
 5. **Generate code following Operations sequence**
@@ -72,31 +73,31 @@ Generate implementation code from a structured SPDD (Structured Prompt-Driven De
    For each operation in the **Operations** section (in order):
 
    a. **Read the operation specification**:
-      - Responsibility: What the component does
-      - Attributes/Methods: Exact fields and signatures
-      - Annotations: Required annotations
-      - Validation rules: Bean validation or custom logic
-      - Business logic: Step-by-step implementation details
+   - Responsibility: What the component does
+   - Attributes/Methods: Exact fields and signatures
+   - Annotations: Required annotations
+   - Validation rules: Bean validation or custom logic
+   - Business logic: Step-by-step implementation details
 
    b. **Apply Norms**:
-      - Annotation standards (e.g., @RestController, @Service)
-      - Dependency injection style (constructor injection)
-      - Exception handling patterns
-      - Logging conventions
-      - Response format standards
+   - Annotation standards (e.g., @RestController, @Service)
+   - Dependency injection style (constructor injection)
+   - Exception handling patterns
+   - Logging conventions
+   - Response format standards
 
    c. **Enforce Safeguards**:
-      - Field validation constraints
-      - HTTP status code requirements
-      - **Exact error messages** (do not modify)
-      - Security constraints
-      - Data integrity rules
+   - Field validation constraints
+   - HTTP status code requirements
+   - **Exact error messages** (do not modify)
+   - Security constraints
+   - Data integrity rules
 
    d. **Generate the code**:
-      - Use correct package path based on project structure
-      - Include all required imports
-      - Implement exact method signatures as specified
-      - Follow the exact validation messages from Safeguards
+   - Use correct package path based on project structure
+   - Include all required imports
+   - Implement exact method signatures as specified
+   - Follow the exact validation messages from Safeguards
 
    **IMPORTANT**:
    - Do NOT deviate from the specifications in Operations
@@ -109,24 +110,24 @@ Generate implementation code from a structured SPDD (Structured Prompt-Driven De
    After ALL code is generated, perform unified validation:
 
    a. **Compilation check**:
-      - Run linter to check for syntax errors
-      - Verify all imports are correct
-      - Fix any type mismatches
+   - Run linter to check for syntax errors
+   - Verify all imports are correct
+   - Fix any type mismatches
 
    b. **Acceptance Criteria verification**:
-      - Cross-check with the **Acceptance Criteria Traceability** table (if present)
-      - Ensure each AC is addressed by the implementation
-      - Verify error codes, HTTP status codes, and messages match exactly
+   - Cross-check with the **Acceptance Criteria Traceability** table (if present)
+   - Ensure each AC is addressed by the implementation
+   - Verify error codes, HTTP status codes, and messages match exactly
 
    c. **Structure verification**:
-      - Verify layered architecture is respected
-      - Confirm dependency injection is correct
-      - Check interface/implementation relationships
+   - Verify layered architecture is respected
+   - Confirm dependency injection is correct
+   - Check interface/implementation relationships
 
    d. **Fix any issues found**:
-      - Fix compilation errors
-      - Correct import statements
-      - Ensure code follows project formatting standards
+   - Fix compilation errors
+   - Correct import statements
+   - Ensure code follows project formatting standards
 
 7. **Report generation summary**
 
@@ -159,6 +160,7 @@ If issues are discovered after generation (during testing or code review), follo
 5. **Commit together**: Commit the updated prompt and code together to maintain traceability
 
 **Example iteration**:
+
 ```
 Issue: "AgentService interface shouldn't contain business logic"
 

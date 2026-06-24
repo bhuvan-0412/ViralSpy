@@ -1,0 +1,10 @@
+#!/bin/sh
+echo "🚀 Running pre-push checks..."
+
+# Run full project checks
+npm run check:all || exit 1
+
+# Run build verification
+npm run build || exit 1
+
+echo "✅ Pre-push validation passed. Safe to push!"

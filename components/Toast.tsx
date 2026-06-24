@@ -1,29 +1,29 @@
-'use client';
-import { useEffect } from 'react';
+'use client'
+import { useEffect } from 'react'
 
 interface ToastProps {
-  message: string;
-  link?: { label: string; href: string };
-  onClose: () => void;
-  duration?: number;
+  message: string
+  link?: { label: string; href: string }
+  onClose: () => void
+  duration?: number
 }
 
-export default function Toast({ 
-  message, link, onClose, duration = 3000 
-}: ToastProps) {
+export default function Toast({ message, link, onClose, duration = 3000 }: ToastProps) {
   useEffect(() => {
-    const timer = setTimeout(onClose, duration);
-    return () => clearTimeout(timer);
-  }, [duration, onClose]);
+    const timer = setTimeout(onClose, duration)
+    return () => clearTimeout(timer)
+  }, [duration, onClose])
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 
+    <div
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 
       z-[9999] flex items-center gap-3 bg-[#1A1A1A] text-white 
       px-5 py-3 rounded-full shadow-xl text-sm font-medium
-      animate-fade-up">
+      animate-fade-up"
+    >
       <span>{message}</span>
       {link && (
-        <a 
+        <a
           href={link.href}
           className="text-[#FF6B4A] hover:underline 
             font-bold shrink-0"
@@ -31,12 +31,9 @@ export default function Toast({
           {link.label} →
         </a>
       )}
-      <button 
-        onClick={onClose}
-        className="text-gray-400 hover:text-white ml-1"
-      >
+      <button onClick={onClose} className="text-gray-400 hover:text-white ml-1">
         ✕
       </button>
     </div>
-  );
+  )
 }

@@ -1,173 +1,182 @@
-import { createClient } from '@supabase/supabase-js';
-import { computeVelocityScore } from '@/lib/velocity';
+import { createClient } from '@supabase/supabase-js'
+import { computeVelocityScore } from '@/lib/velocity'
 
 function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) {
-    throw new Error('Supabase URL and Service Role Key must be defined.');
+    throw new Error('Supabase URL and Service Role Key must be defined.')
   }
-  return createClient(url, key);
+  return createClient(url, key)
 }
 
-export const runtime = 'nodejs';
-export const maxDuration = 60;
-
+export const runtime = 'nodejs'
+export const maxDuration = 60
 
 // Helper: map YouTube category ID / title keywords to niche
 function mapYouTubeCategoryToNiche(categoryId: string, title: string): string {
-  const titleLower = title.toLowerCase();
-  if (/workout|fitness|gym|somatic|bodyweight|stretch/.test(titleLower)) return 'fitness';
-  if (/food|recipe|cook|dinner|meal|coffee|bake|cake|gourmet|prep/.test(titleLower)) return 'food';
-  if (/invest|money|fund|etf|stock|finance|budget|hustle|rich/.test(titleLower)) return 'finance';
-  if (/fashion|outfit|style|luxury|wear|clothing|dress|fits/.test(titleLower)) return 'fashion';
-  if (/skincare|makeup|grwm|beauty|routine|hair|glow/.test(titleLower)) return 'beauty';
-  if (/tech|ai|software|code|programming|gadget|phone|keyboard/.test(titleLower)) return 'tech';
-  if (/game|gaming|gamer|xbox|playstation|nintendo/.test(titleLower)) return 'gaming';
-  if (/travel|trip|flight|explore|hotel|vacation|vlog/.test(titleLower)) return 'travel';
-  if (/learn|study|tutorial|explain|guide|education/.test(titleLower)) return 'education';
+  const titleLower = title.toLowerCase()
+  if (/workout|fitness|gym|somatic|bodyweight|stretch/.test(titleLower)) return 'fitness'
+  if (/food|recipe|cook|dinner|meal|coffee|bake|cake|gourmet|prep/.test(titleLower)) return 'food'
+  if (/invest|money|fund|etf|stock|finance|budget|hustle|rich/.test(titleLower)) return 'finance'
+  if (/fashion|outfit|style|luxury|wear|clothing|dress|fits/.test(titleLower)) return 'fashion'
+  if (/skincare|makeup|grwm|beauty|routine|hair|glow/.test(titleLower)) return 'beauty'
+  if (/tech|ai|software|code|programming|gadget|phone|keyboard/.test(titleLower)) return 'tech'
+  if (/game|gaming|gamer|xbox|playstation|nintendo/.test(titleLower)) return 'gaming'
+  if (/travel|trip|flight|explore|hotel|vacation|vlog/.test(titleLower)) return 'travel'
+  if (/learn|study|tutorial|explain|guide|education/.test(titleLower)) return 'education'
   const categoryMap: Record<string, string> = {
-    '17': 'sports', '10': 'music', '20': 'gaming',
-    '26': 'education', '22': 'lifestyle', '19': 'travel'
-  };
-  return categoryMap[categoryId] || 'lifestyle';
+    '17': 'sports',
+    '10': 'music',
+    '20': 'gaming',
+    '26': 'education',
+    '22': 'lifestyle',
+    '19': 'travel',
+  }
+  return categoryMap[categoryId] || 'lifestyle'
 }
 
 // ─── Agent 2: Anomaly Detector ────────────────────────────
-async function runAnomalyDetector(trendId: string, currentVelocity: number, currentMomentum: string, currentConfidence: number) {
-  const supabase = getSupabase();
+async function runAnomalyDetector(
+  trendId: string,
+  currentVelocity: number,
+  currentMomentum: string,
+  currentConfidence: number
+) {
+  const supabase = getSupabase()
   try {
     const { data: snapshots } = await supabase
       .from('trend_snapshots')
       .select('velocity_score')
       .eq('trend_id', trendId)
       .order('snapped_at', { ascending: false })
-      .limit(14);
+      .limit(14)
 
-    if (!snapshots || snapshots.length < 3) return;
+    if (!snapshots || snapshots.length < 3) return
 
-    const scores = snapshots.map((s: any) => Number(s.velocity_score));
-    const mean = scores.reduce((sum: number, val: number) => sum + val, 0) / scores.length;
-    const variance = scores.reduce((sum: number, val: number) => sum + Math.pow(val - mean, 2), 0) / scores.length;
-    const stdDev = Math.sqrt(variance);
-    const zScore = stdDev > 0 ? (currentVelocity - mean) / stdDev : 0;
+    const scores = snapshots.map((s: any) => Number(s.velocity_score))
+    const mean = scores.reduce((sum: number, val: number) => sum + val, 0) / scores.length
+    const variance =
+      scores.reduce((sum: number, val: number) => sum + Math.pow(val - mean, 2), 0) / scores.length
+    const stdDev = Math.sqrt(variance)
+    const zScore = stdDev > 0 ? (currentVelocity - mean) / stdDev : 0
 
-    let newConfidence = currentConfidence;
-    let newMomentum = currentMomentum;
+    let newConfidence = currentConfidence
+    let newMomentum = currentMomentum
 
     if (zScore > 2.5) {
-      newConfidence = parseFloat(Math.min(0.99, currentConfidence + 0.15).toFixed(2));
-      if (newMomentum === 'RISING') newMomentum = 'EXPLODING';
+      newConfidence = parseFloat(Math.min(0.99, currentConfidence + 0.15).toFixed(2))
+      if (newMomentum === 'RISING') newMomentum = 'EXPLODING'
     } else if (zScore < 0) {
-      newConfidence = parseFloat(Math.max(0.50, currentConfidence - 0.05).toFixed(2));
+      newConfidence = parseFloat(Math.max(0.5, currentConfidence - 0.05).toFixed(2))
     }
 
     if (newConfidence !== currentConfidence || newMomentum !== currentMomentum) {
       await supabase
         .from('trends')
         .update({ confidence_score: newConfidence, momentum_status: newMomentum })
-        .eq('id', trendId);
+        .eq('id', trendId)
     }
   } catch (err) {
-    console.warn('Anomaly detector skipped:', err);
+    console.warn('Anomaly detector skipped:', err)
   }
 }
 
 export async function GET() {
-  const supabase = getSupabase();
+  const supabase = getSupabase()
   const results = {
     youtube: 0,
     instagram: 0,
-    errors: [] as string[]
-  };
+    errors: [] as string[],
+  }
 
   // ─── SOURCE 1: YouTube Shorts ───────────────────────────
   try {
     const ytRes = await fetch(
       `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&maxResults=20&key=${process.env.YOUTUBE_API_KEY}`
-    );
-    const ytData = await ytRes.json();
+    )
+    const ytData = await ytRes.json()
 
     if (ytData.items) {
       for (const video of ytData.items) {
-        const title = video.snippet.title as string;
-        const viewCount = parseInt(video.statistics.viewCount || '0');
-        const categoryId = video.snippet.categoryId as string;
+        const title = video.snippet.title as string
+        const viewCount = parseInt(video.statistics.viewCount || '0')
+        const categoryId = video.snippet.categoryId as string
 
-        const niche = mapYouTubeCategoryToNiche(categoryId, title);
-        
-        let postsPerHour = 0;
-        let avgPosts24h = 0;
-        let velocityScore = 0;
+        const niche = mapYouTubeCategoryToNiche(categoryId, title)
+
+        let postsPerHour = 0
+        let avgPosts24h = 0
+        let velocityScore = 0
 
         const { data: existing } = await supabase
           .from('trends')
           .select('post_count, posts_per_hour, avg_posts_24h, velocity_score, updated_at')
           .eq('name', title.slice(0, 100))
           .eq('platform', 'YOUTUBE')
-          .single();
+          .single()
 
         if (existing) {
           // Calculate real delta
-          const timeDiffHours = (Date.now() - new Date(existing.updated_at).getTime()) / (1000 * 60 * 60);
-          const countDelta = viewCount - existing.post_count;
-          postsPerHour = timeDiffHours > 0 
-            ? Math.round(countDelta / timeDiffHours)
-            : existing.posts_per_hour;
+          const timeDiffHours =
+            (Date.now() - new Date(existing.updated_at).getTime()) / (1000 * 60 * 60)
+          const countDelta = viewCount - existing.post_count
+          postsPerHour =
+            timeDiffHours > 0 ? Math.round(countDelta / timeDiffHours) : existing.posts_per_hour
 
           // Update rolling 24h average using exponential moving average
-          const alpha = 0.1; // smoothing factor
-          avgPosts24h = Math.round(
-            alpha * postsPerHour + 
-            (1 - alpha) * existing.avg_posts_24h
-          );
+          const alpha = 0.1 // smoothing factor
+          avgPosts24h = Math.round(alpha * postsPerHour + (1 - alpha) * existing.avg_posts_24h)
 
           // Compute real velocity
-          velocityScore = avgPosts24h > 0
-            ? (postsPerHour / avgPosts24h) * 100
-            : 0;
+          velocityScore = avgPosts24h > 0 ? (postsPerHour / avgPosts24h) * 100 : 0
         } else {
           // Use estimate for first poll
-          postsPerHour = Math.floor(viewCount / 168);
+          postsPerHour = Math.floor(viewCount / 168)
           // 168 = hours in a week, conservative estimate
-          avgPosts24h = Math.floor(postsPerHour * 0.5);
-          velocityScore = 150; // default RISING
+          avgPosts24h = Math.floor(postsPerHour * 0.5)
+          velocityScore = 150 // default RISING
         }
 
-        let momentumStatus: 'EXPLODING' | 'RISING' | 'PEAKED' | 'DEAD' = 'RISING';
+        let momentumStatus: 'EXPLODING' | 'RISING' | 'PEAKED' | 'DEAD' = 'RISING'
         if (velocityScore >= 300) {
-          momentumStatus = 'EXPLODING';
+          momentumStatus = 'EXPLODING'
         } else if (velocityScore >= 150) {
-          momentumStatus = 'RISING';
+          momentumStatus = 'RISING'
         } else if (velocityScore >= 50) {
-          momentumStatus = 'PEAKED';
+          momentumStatus = 'PEAKED'
         } else {
-          momentumStatus = 'DEAD';
+          momentumStatus = 'DEAD'
         }
 
         const { data: savedTrend, error } = await supabase
           .from('trends')
-          .upsert({
-            name: title.slice(0, 100),
-            niche,
-            platform: 'YOUTUBE',
-            post_count: viewCount,
-            posts_per_hour: postsPerHour,
-            avg_posts_24h: avgPosts24h,
-            velocity_score: velocityScore,
-            peak_velocity: velocityScore,
-            momentum_status: momentumStatus,
-            confidence_score: Math.min(0.95, velocityScore / 500),
-            detected_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'name,platform', ignoreDuplicates: false })
+          .upsert(
+            {
+              name: title.slice(0, 100),
+              niche,
+              platform: 'YOUTUBE',
+              post_count: viewCount,
+              posts_per_hour: postsPerHour,
+              avg_posts_24h: avgPosts24h,
+              velocity_score: velocityScore,
+              peak_velocity: velocityScore,
+              momentum_status: momentumStatus,
+              confidence_score: Math.min(0.95, velocityScore / 500),
+              detected_at: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'name,platform', ignoreDuplicates: false }
+          )
           .select()
-          .single();
+          .single()
 
         if (error) {
-          results.errors.push(`YouTube upsert: ${error.message} | code: ${error.code} | details: ${error.details}`);
-          continue;
+          results.errors.push(
+            `YouTube upsert: ${error.message} | code: ${error.code} | details: ${error.details}`
+          )
+          continue
         }
 
         if (savedTrend) {
@@ -176,18 +185,22 @@ export async function GET() {
             post_count: viewCount,
             posts_per_hour: postsPerHour,
             velocity_score: velocityScore,
-            snapped_at: new Date().toISOString()
-          });
-          await runAnomalyDetector(savedTrend.id, velocityScore, momentumStatus, Math.min(0.95, velocityScore / 500));
+            snapped_at: new Date().toISOString(),
+          })
+          await runAnomalyDetector(
+            savedTrend.id,
+            velocityScore,
+            momentumStatus,
+            Math.min(0.95, velocityScore / 500)
+          )
         }
 
-        results.youtube++;
+        results.youtube++
       }
     }
   } catch (e: any) {
-    results.errors.push(`YouTube: ${e.message}`);
+    results.errors.push(`YouTube: ${e.message}`)
   }
-
 
   // ─── SOURCE 3: Instagram via RapidAPI ────────────────────
   const niches = [
@@ -197,8 +210,8 @@ export async function GET() {
     { keyword: 'ootd', niche: 'fashion' },
     { keyword: 'skincare', niche: 'beauty' },
     { keyword: 'travel', niche: 'travel' },
-    { keyword: 'gaming', niche: 'gaming' }
-  ];
+    { keyword: 'gaming', niche: 'gaming' },
+  ]
 
   for (const { keyword, niche } of niches) {
     try {
@@ -207,85 +220,85 @@ export async function GET() {
         {
           headers: {
             'x-rapidapi-key': process.env.RAPIDAPI_INSTAGRAM_KEY!,
-            'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com'
-          }
+            'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com',
+          },
         }
-      );
-      const data = await res.json();
-      const mediaCount = data?.data?.media_count || 0;
-      
-      let postsPerHour = 0;
-      let avgPosts24h = 0;
-      let velocityScore = 0;
+      )
+      const data = await res.json()
+      const mediaCount = data?.data?.media_count || 0
+
+      let postsPerHour = 0
+      let avgPosts24h = 0
+      let velocityScore = 0
 
       const { data: existing } = await supabase
         .from('trends')
         .select('post_count, posts_per_hour, avg_posts_24h, velocity_score, updated_at')
         .eq('name', `#${keyword} trending`)
         .eq('platform', 'INSTAGRAM')
-        .single();
+        .single()
 
       if (existing) {
         // Calculate real delta
-        const timeDiffHours = (Date.now() - new Date(existing.updated_at).getTime()) / (1000 * 60 * 60);
-        const countDelta = mediaCount - existing.post_count;
-        postsPerHour = timeDiffHours > 0 
-          ? Math.round(countDelta / timeDiffHours)
-          : existing.posts_per_hour;
+        const timeDiffHours =
+          (Date.now() - new Date(existing.updated_at).getTime()) / (1000 * 60 * 60)
+        const countDelta = mediaCount - existing.post_count
+        postsPerHour =
+          timeDiffHours > 0 ? Math.round(countDelta / timeDiffHours) : existing.posts_per_hour
 
         // Update rolling 24h average using exponential moving average
-        const alpha = 0.1; // smoothing factor
-        avgPosts24h = Math.round(
-          alpha * postsPerHour + 
-          (1 - alpha) * existing.avg_posts_24h
-        );
+        const alpha = 0.1 // smoothing factor
+        avgPosts24h = Math.round(alpha * postsPerHour + (1 - alpha) * existing.avg_posts_24h)
 
         // Compute real velocity
-        velocityScore = avgPosts24h > 0
-          ? (postsPerHour / avgPosts24h) * 100
-          : 0;
+        velocityScore = avgPosts24h > 0 ? (postsPerHour / avgPosts24h) * 100 : 0
       } else {
         // Use estimate for first poll
-        postsPerHour = Math.floor(mediaCount / 168);
+        postsPerHour = Math.floor(mediaCount / 168)
         // 168 = hours in a week, conservative estimate
-        avgPosts24h = Math.floor(postsPerHour * 0.5);
-        velocityScore = 150; // default RISING
+        avgPosts24h = Math.floor(postsPerHour * 0.5)
+        velocityScore = 150 // default RISING
       }
 
-      let momentumStatus: 'EXPLODING' | 'RISING' | 'PEAKED' | 'DEAD' = 'RISING';
+      let momentumStatus: 'EXPLODING' | 'RISING' | 'PEAKED' | 'DEAD' = 'RISING'
       if (velocityScore >= 300) {
-        momentumStatus = 'EXPLODING';
+        momentumStatus = 'EXPLODING'
       } else if (velocityScore >= 150) {
-        momentumStatus = 'RISING';
+        momentumStatus = 'RISING'
       } else if (velocityScore >= 50) {
-        momentumStatus = 'PEAKED';
+        momentumStatus = 'PEAKED'
       } else {
-        momentumStatus = 'DEAD';
+        momentumStatus = 'DEAD'
       }
 
       const { data: savedTrend, error } = await supabase
         .from('trends')
-        .upsert({
-          name: `#${keyword} trending`,
-          niche,
-          platform: 'INSTAGRAM',
-          post_count: mediaCount,
-          posts_per_hour: postsPerHour,
-          avg_posts_24h: avgPosts24h,
-          velocity_score: velocityScore,
-          peak_velocity: velocityScore,
-          momentum_status: momentumStatus,
-          confidence_score: Math.min(0.85, velocityScore / 500),
-          detected_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'name,platform', ignoreDuplicates: false })
+        .upsert(
+          {
+            name: `#${keyword} trending`,
+            niche,
+            platform: 'INSTAGRAM',
+            post_count: mediaCount,
+            posts_per_hour: postsPerHour,
+            avg_posts_24h: avgPosts24h,
+            velocity_score: velocityScore,
+            peak_velocity: velocityScore,
+            momentum_status: momentumStatus,
+            confidence_score: Math.min(0.85, velocityScore / 500),
+            detected_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'name,platform', ignoreDuplicates: false }
+        )
         .select()
-        .single();
+        .single()
 
       if (error) {
-        results.errors.push(`Instagram/${keyword} upsert: ${error.message} | code: ${error.code} | details: ${error.details}`);
-        continue;
+        results.errors.push(
+          `Instagram/${keyword} upsert: ${error.message} | code: ${error.code} | details: ${error.details}`
+        )
+        continue
       }
 
       if (savedTrend) {
@@ -294,14 +307,19 @@ export async function GET() {
           post_count: mediaCount,
           posts_per_hour: postsPerHour,
           velocity_score: velocityScore,
-          snapped_at: new Date().toISOString()
-        });
-        await runAnomalyDetector(savedTrend.id, velocityScore, momentumStatus, Math.min(0.85, velocityScore / 500));
+          snapped_at: new Date().toISOString(),
+        })
+        await runAnomalyDetector(
+          savedTrend.id,
+          velocityScore,
+          momentumStatus,
+          Math.min(0.85, velocityScore / 500)
+        )
       }
 
-      results.instagram++;
+      results.instagram++
     } catch (e: any) {
-      results.errors.push(`Instagram/${keyword}: ${e.message}`);
+      results.errors.push(`Instagram/${keyword}: ${e.message}`)
     }
   }
 
@@ -311,7 +329,7 @@ export async function GET() {
     results: {
       youtube: results.youtube,
       instagram: results.instagram,
-      errors: results.errors
-    }
-  });
+      errors: results.errors,
+    },
+  })
 }

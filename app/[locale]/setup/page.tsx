@@ -1,27 +1,27 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import { 
-  ArrowLeft, 
-  HelpCircle, 
-  Settings, 
-  Sparkles, 
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
+import {
+  ArrowLeft,
+  HelpCircle,
+  Settings,
+  Sparkles,
   ExternalLink,
   ChevronDown,
-  ChevronUp
-} from 'lucide-react';
-import Logo from '../../../components/Logo';
-import CopyCodeBlock from '../../../components/CopyCodeBlock';
-import { detectOllamaUrl } from '../../../hooks/useAIProvider';
+  ChevronUp,
+} from 'lucide-react'
+import Logo from '../../../components/Logo'
+import CopyCodeBlock from '../../../components/CopyCodeBlock'
+import { detectOllamaUrl } from '../../../hooks/useAIProvider'
 
 export default function SetupPage() {
-  const router = useRouter();
-  const locale = useLocale();
+  const router = useRouter()
+  const locale = useLocale()
 
   // OS selection tab state (saves to localStorage)
-  const [selectedOS, setSelectedOS] = useState<'windows' | 'mac' | 'linux'>('windows');
+  const [selectedOS, setSelectedOS] = useState<'windows' | 'mac' | 'linux'>('windows')
 
   // Checklist states
   const [checklist, setChecklist] = useState({
@@ -29,43 +29,45 @@ export default function SetupPage() {
     ollamaRunning: false,
     urlSet: false,
     testConnection: false,
-    ready: false
-  });
+    ready: false,
+  })
 
   // Load selected OS from localStorage on mount
   useEffect(() => {
-    const savedOS = localStorage.getItem('viralspy_setup_os') as 'windows' | 'mac' | 'linux' | null;
+    const savedOS = localStorage.getItem('viralspy_setup_os') as 'windows' | 'mac' | 'linux' | null
     if (savedOS && ['windows', 'mac', 'linux'].includes(savedOS)) {
-      setSelectedOS(savedOS);
+      setSelectedOS(savedOS)
     }
-  }, []);
+  }, [])
 
   const handleOSChange = (os: 'windows' | 'mac' | 'linux') => {
-    setSelectedOS(os);
-    localStorage.setItem('viralspy_setup_os', os);
-  };
+    setSelectedOS(os)
+    localStorage.setItem('viralspy_setup_os', os)
+  }
 
   const toggleChecklist = (key: keyof typeof checklist) => {
     setChecklist((prev) => ({
       ...prev,
-      [key]: !prev[key]
-    }));
-  };
+      [key]: !prev[key],
+    }))
+  }
 
   // State for live config values
-  const [inputUrl, setInputUrl] = useState('http://localhost:11434');
-  const [inputModel, setInputModel] = useState('llama3');
+  const [inputUrl, setInputUrl] = useState('http://localhost:11434')
+  const [inputModel, setInputModel] = useState('llama3')
   const [config, setConfig] = useState({
     ollamaUrl: 'http://localhost:11434',
-    ollamaModel: 'llama3'
-  });
+    ollamaModel: 'llama3',
+  })
 
-  const [showSaved, setShowSaved] = useState(false);
-  const [autoDetectStatus, setAutoDetectStatus] = useState<'idle' | 'detecting' | 'success' | 'failed'>('idle');
-  const [autoDetectMessage, setAutoDetectMessage] = useState('');
-  const [ollamaDetected, setOllamaDetected] = useState(false);
-  const [autoStatus, setAutoStatus] = useState<'connected' | 'disconnected'>('disconnected');
-  const [installGuideExpanded, setInstallGuideExpanded] = useState(false);
+  const [showSaved, setShowSaved] = useState(false)
+  const [autoDetectStatus, setAutoDetectStatus] = useState<
+    'idle' | 'detecting' | 'success' | 'failed'
+  >('idle')
+  const [autoDetectMessage, setAutoDetectMessage] = useState('')
+  const [ollamaDetected, setOllamaDetected] = useState(false)
+  const [autoStatus, setAutoStatus] = useState<'connected' | 'disconnected'>('disconnected')
+  const [installGuideExpanded, setInstallGuideExpanded] = useState(false)
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     inUse: false,
@@ -73,163 +75,160 @@ export default function SetupPage() {
     ipChanged: false,
     slow: false,
     ram: false,
-    cloud: false
-  });
+    cloud: false,
+  })
 
   const toggleExpanded = (key: string) => {
     setExpanded((prev) => ({
       ...prev,
-      [key]: !prev[key]
-    }));
-  };
+      [key]: !prev[key],
+    }))
+  }
 
   // Load settings from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('viralspy_ai_config');
+    const stored = localStorage.getItem('viralspy_ai_config')
     if (stored) {
       try {
-        const parsed = JSON.parse(stored);
-        const url = parsed.ollamaUrl || 'http://localhost:11434';
-        const model = parsed.ollamaModel || 'llama3';
-        setConfig({ ollamaUrl: url, ollamaModel: model });
-        setInputUrl(url);
-        setInputModel(model);
+        const parsed = JSON.parse(stored)
+        const url = parsed.ollamaUrl || 'http://localhost:11434'
+        const model = parsed.ollamaModel || 'llama3'
+        setConfig({ ollamaUrl: url, ollamaModel: model })
+        setInputUrl(url)
+        setInputModel(model)
       } catch {}
     }
-  }, []);
+  }, [])
 
   // Live auto-check every 10 seconds using the stored ollamaUrl from localStorage
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const stored = localStorage.getItem('viralspy_ai_config');
-        let url = 'http://localhost:11434';
+        const stored = localStorage.getItem('viralspy_ai_config')
+        let url = 'http://localhost:11434'
         if (stored) {
           try {
-            const parsed = JSON.parse(stored);
-            if (parsed.ollamaUrl) url = parsed.ollamaUrl;
+            const parsed = JSON.parse(stored)
+            if (parsed.ollamaUrl) url = parsed.ollamaUrl
           } catch {}
         }
-        
+
         const res = await fetch(`${url.replace(/\/$/, '')}/api/tags`, {
-          signal: AbortSignal.timeout(2000)
-        });
+          signal: AbortSignal.timeout(2000),
+        })
         if (res.ok) {
-          setOllamaDetected(true);
+          setOllamaDetected(true)
           setChecklist((prev) => ({
             ...prev,
             ollamaRunning: true,
-            urlSet: true
-          }));
+            urlSet: true,
+          }))
         } else {
-          setOllamaDetected(false);
+          setOllamaDetected(false)
         }
       } catch {
-        setOllamaDetected(false);
+        setOllamaDetected(false)
       }
-    };
+    }
 
-    checkStatus();
-    const interval = setInterval(checkStatus, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    checkStatus()
+    const interval = setInterval(checkStatus, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Live connection checker in Section 4
-  const ollamaUrl = config.ollamaUrl;
+  const ollamaUrl = config.ollamaUrl
   useEffect(() => {
     const checkTags = async () => {
       try {
-        const res = await fetch(
-          `${ollamaUrl.replace(/\/$/, '')}/api/tags`,
-          { signal: AbortSignal.timeout(2000) }
-        );
-        if (res.ok) setAutoStatus('connected');
-        else setAutoStatus('disconnected');
+        const res = await fetch(`${ollamaUrl.replace(/\/$/, '')}/api/tags`, {
+          signal: AbortSignal.timeout(2000),
+        })
+        if (res.ok) setAutoStatus('connected')
+        else setAutoStatus('disconnected')
       } catch {
-        setAutoStatus('disconnected');
+        setAutoStatus('disconnected')
       }
-    };
-    checkTags();
-    const interval = setInterval(checkTags, 10000);
-    return () => clearInterval(interval);
-  }, [ollamaUrl]);
+    }
+    checkTags()
+    const interval = setInterval(checkTags, 10000)
+    return () => clearInterval(interval)
+  }, [ollamaUrl])
 
   // Client-side auto-detect URLs
   const runAutoDetect = async () => {
-    setAutoDetectStatus('detecting');
-    setAutoDetectMessage('');
+    setAutoDetectStatus('detecting')
+    setAutoDetectMessage('')
     const urlsToTry = [
       'http://localhost:11434',
-      'http://127.0.0.1:11434', 
+      'http://127.0.0.1:11434',
       'http://172.29.130.173:11434',
       'http://172.17.0.1:11434',
       'http://172.28.0.1:11434',
       'http://172.30.0.1:11434',
-    ];
+    ]
     for (const url of urlsToTry) {
       try {
         const res = await fetch(`${url}/api/tags`, {
-          signal: AbortSignal.timeout(2000)
-        });
+          signal: AbortSignal.timeout(2000),
+        })
         if (res.ok) {
-          setAutoDetectStatus('success');
-          setAutoDetectMessage(`✅ Found at ${url}`);
-          setInputUrl(url);
+          setAutoDetectStatus('success')
+          setAutoDetectMessage(`✅ Found at ${url}`)
+          setInputUrl(url)
 
           // Save to localStorage
-          const current = JSON.parse(localStorage.getItem('viralspy_ai_config') || '{}');
+          const current = JSON.parse(localStorage.getItem('viralspy_ai_config') || '{}')
           const updated = {
             ...current,
             provider: 'ollama',
             ollamaUrl: url,
-            ollamaModel: inputModel
-          };
-          localStorage.setItem('viralspy_ai_config', JSON.stringify(updated));
+            ollamaModel: inputModel,
+          }
+          localStorage.setItem('viralspy_ai_config', JSON.stringify(updated))
           setConfig({
             ollamaUrl: url,
-            ollamaModel: inputModel
-          });
-          window.dispatchEvent(new Event('viralspy_ai_config_updated'));
-          return;
+            ollamaModel: inputModel,
+          })
+          window.dispatchEvent(new Event('viralspy_ai_config_updated'))
+          return
         }
       } catch (err) {
         // ignore and try next
       }
     }
-    setAutoDetectStatus('failed');
-    setAutoDetectMessage('❌ Ollama not detected');
-  };
+    setAutoDetectStatus('failed')
+    setAutoDetectMessage('❌ Ollama not detected')
+  }
 
   const saveToSettings = () => {
-    const current = JSON.parse(
-      localStorage.getItem('viralspy_ai_config') || '{}'
-    );
+    const current = JSON.parse(localStorage.getItem('viralspy_ai_config') || '{}')
     const updated = {
       ...current,
       provider: 'ollama',
       ollamaUrl: inputUrl,
-      ollamaModel: inputModel
-    };
-    localStorage.setItem('viralspy_ai_config', JSON.stringify(updated));
+      ollamaModel: inputModel,
+    }
+    localStorage.setItem('viralspy_ai_config', JSON.stringify(updated))
     setConfig({
       ollamaUrl: inputUrl,
-      ollamaModel: inputModel
-    });
-    window.dispatchEvent(new Event('viralspy_ai_config_updated'));
-    setShowSaved(true);
-    setTimeout(() => setShowSaved(false), 3000);
-  };
+      ollamaModel: inputModel,
+    })
+    window.dispatchEvent(new Event('viralspy_ai_config_updated'))
+    setShowSaved(true)
+    setTimeout(() => setShowSaved(false), 3000)
+  }
 
   const getLocalizedPath = (path: string) => {
-    return locale === 'en' ? path : `/${locale}${path}`;
-  };
+    return locale === 'en' ? path : `/${locale}${path}`
+  }
 
-  const allChecked = 
-    checklist.terminalOpen && 
-    checklist.ollamaRunning && 
-    checklist.urlSet && 
-    checklist.testConnection && 
-    checklist.ready;
+  const allChecked =
+    checklist.terminalOpen &&
+    checklist.ollamaRunning &&
+    checklist.urlSet &&
+    checklist.testConnection &&
+    checklist.ready
 
   return (
     <div className="min-h-screen bg-[#F7F5F2] text-[#1A1A1A] flex flex-col justify-between font-sans relative">
@@ -255,7 +254,6 @@ export default function SetupPage() {
 
       {/* Content Container */}
       <main className="flex-grow max-w-3xl mx-auto w-full py-8 px-4 sm:px-6 space-y-8 z-10">
-        
         {/* SECTION 0 — PAGE HEADER */}
         <div className="space-y-4 text-center sm:text-left">
           <h1 className="text-3xl sm:text-4xl font-black text-[#1A1A1A] tracking-tight leading-tight">
@@ -301,7 +299,9 @@ export default function SetupPage() {
               {/* Step 1 */}
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">1</span>
+                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">
+                    1
+                  </span>
                   <span className="font-bold text-gray-800 text-xs">Open WSL Terminal</span>
                 </div>
                 <p className="text-xs text-gray-600 pl-7">
@@ -312,15 +312,24 @@ export default function SetupPage() {
               {/* Step 2 */}
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">2</span>
-                  <span className="font-bold text-gray-800 text-xs">Kill existing + Start Ollama</span>
+                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">
+                    2
+                  </span>
+                  <span className="font-bold text-gray-800 text-xs">
+                    Kill existing + Start Ollama
+                  </span>
                 </div>
                 <div className="pl-7 space-y-2">
                   <p className="text-xs text-gray-650 font-bold block">Run this single command:</p>
                   <CopyCodeBlock code="sudo kill -9 $(sudo lsof -t -i:11434) 2>/dev/null; sleep 2 && OLLAMA_HOST=0.0.0.0:11434 OLLAMA_ORIGINS='*' ollama serve" />
                   <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3.5 rounded-xl text-xs space-y-1">
-                    <p className="font-semibold">⚠️ Keep this terminal open the entire time you use ViralSpy. Closing it stops Ollama.</p>
-                    <p className="text-[11px] text-amber-700 font-medium">Enter your password when asked. Keep this terminal open — don't close it!</p>
+                    <p className="font-semibold">
+                      ⚠️ Keep this terminal open the entire time you use ViralSpy. Closing it stops
+                      Ollama.
+                    </p>
+                    <p className="text-[11px] text-amber-700 font-medium">
+                      Enter your password when asked. Keep this terminal open — don't close it!
+                    </p>
                   </div>
                 </div>
               </div>
@@ -328,16 +337,32 @@ export default function SetupPage() {
               {/* Step 3 */}
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">3</span>
-                  <span className="font-bold text-gray-800 text-xs">Find your WSL IP (run in a NEW terminal)</span>
+                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">
+                    3
+                  </span>
+                  <span className="font-bold text-gray-800 text-xs">
+                    Find your WSL IP (run in a NEW terminal)
+                  </span>
                 </div>
                 <div className="pl-7 space-y-2">
-                  <p className="text-xs text-gray-650 font-bold block">Open a second WSL terminal and run:</p>
+                  <p className="text-xs text-gray-650 font-bold block">
+                    Open a second WSL terminal and run:
+                  </p>
                   <CopyCodeBlock code="hostname -I" />
-                  <p className="text-xs text-gray-600">Copy the first IP shown (looks like 172.x.x.x)</p>
-                  <p className="text-xs text-gray-600 font-semibold">Use this IP in ViralSpy Settings as your Ollama URL: <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[11px] text-[#FF6B4A]">http://[your-ip]:11434</code></p>
+                  <p className="text-xs text-gray-600">
+                    Copy the first IP shown (looks like 172.x.x.x)
+                  </p>
+                  <p className="text-xs text-gray-600 font-semibold">
+                    Use this IP in ViralSpy Settings as your Ollama URL:{' '}
+                    <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[11px] text-[#FF6B4A]">
+                      http://[your-ip]:11434
+                    </code>
+                  </p>
                   <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3.5 rounded-xl text-xs">
-                    <p className="font-semibold">⚠️ Your WSL IP changes every time you restart Windows. Run hostname -I after each reboot and update it in Settings, or use the Auto-detect button.</p>
+                    <p className="font-semibold">
+                      ⚠️ Your WSL IP changes every time you restart Windows. Run hostname -I after
+                      each reboot and update it in Settings, or use the Auto-detect button.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -366,7 +391,9 @@ export default function SetupPage() {
                   )}
                 </button>
                 {autoDetectMessage && (
-                  <span className={`text-xs font-bold ml-2 ${autoDetectStatus === 'success' ? 'text-green-600 animate-pulse' : 'text-red-500'}`}>
+                  <span
+                    className={`text-xs font-bold ml-2 ${autoDetectStatus === 'success' ? 'text-green-600 animate-pulse' : 'text-red-500'}`}
+                  >
                     {autoDetectMessage}
                   </span>
                 )}
@@ -378,7 +405,9 @@ export default function SetupPage() {
             <div className="space-y-4">
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">1</span>
+                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">
+                    1
+                  </span>
                   <span className="font-bold text-gray-800 text-xs">Open Terminal</span>
                 </div>
                 <p className="text-xs text-gray-600 pl-7">
@@ -388,7 +417,9 @@ export default function SetupPage() {
 
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">2</span>
+                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">
+                    2
+                  </span>
                   <span className="font-bold text-gray-800 text-xs">Start Ollama</span>
                 </div>
                 <div className="pl-7 space-y-1">
@@ -399,11 +430,17 @@ export default function SetupPage() {
 
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">3</span>
+                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">
+                    3
+                  </span>
                   <span className="font-bold text-gray-800 text-xs">Ollama URL</span>
                 </div>
                 <p className="text-xs text-gray-650 pl-7">
-                  Your URL is always: <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[11px] text-[#FF6B4A]">http://localhost:11434</code>. No IP hunting needed on Mac! 🎉
+                  Your URL is always:{' '}
+                  <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[11px] text-[#FF6B4A]">
+                    http://localhost:11434
+                  </code>
+                  . No IP hunting needed on Mac! 🎉
                 </p>
               </div>
 
@@ -423,7 +460,9 @@ export default function SetupPage() {
             <div className="space-y-4">
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">1</span>
+                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">
+                    1
+                  </span>
                   <span className="font-bold text-gray-800 text-xs">Start Ollama</span>
                 </div>
                 <div className="pl-7 space-y-2">
@@ -435,11 +474,16 @@ export default function SetupPage() {
 
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">2</span>
+                  <span className="h-5 w-5 rounded-full bg-[#FF6B4A]/10 text-[#FF6B4A] flex items-center justify-center font-bold text-xs">
+                    2
+                  </span>
                   <span className="font-bold text-gray-800 text-xs">Ollama URL</span>
                 </div>
                 <p className="text-xs text-gray-650 pl-7">
-                  Your URL is always: <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[11px] text-[#FF6B4A]">http://localhost:11434</code>
+                  Your URL is always:{' '}
+                  <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[11px] text-[#FF6B4A]">
+                    http://localhost:11434
+                  </code>
                 </p>
               </div>
 
@@ -461,38 +505,42 @@ export default function SetupPage() {
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             📋 Every session checklist
           </h2>
-          
+
           <div className="grid grid-cols-1 gap-2.5">
             {/* Checkbox 1 */}
-            <div 
+            <div
               onClick={() => toggleChecklist('terminalOpen')}
               className={`flex items-center gap-3 p-3.5 bg-white border rounded-xl cursor-pointer select-none transition-all ${
-                checklist.terminalOpen 
-                  ? 'border-[#FF6B4A] text-[#FF6B4A] font-semibold bg-[#FF6B4A]/5' 
+                checklist.terminalOpen
+                  ? 'border-[#FF6B4A] text-[#FF6B4A] font-semibold bg-[#FF6B4A]/5'
                   : 'border-gray-200 text-gray-500 hover:bg-gray-50/50'
               }`}
             >
-              <div className={`h-5 w-5 rounded-full flex items-center justify-center transition-all ${
-                checklist.terminalOpen ? 'bg-[#FF6B4A] text-white' : 'border border-gray-300'
-              }`}>
+              <div
+                className={`h-5 w-5 rounded-full flex items-center justify-center transition-all ${
+                  checklist.terminalOpen ? 'bg-[#FF6B4A] text-white' : 'border border-gray-300'
+                }`}
+              >
                 {checklist.terminalOpen && <span className="text-[10px]">✓</span>}
               </div>
               <span className="text-xs">WSL terminal is open</span>
             </div>
 
             {/* Checkbox 2 */}
-            <div 
+            <div
               onClick={() => toggleChecklist('ollamaRunning')}
               className={`flex items-center justify-between p-3.5 bg-white border rounded-xl cursor-pointer select-none transition-all ${
-                checklist.ollamaRunning 
-                  ? 'border-[#FF6B4A] text-[#FF6B4A] font-semibold bg-[#FF6B4A]/5' 
+                checklist.ollamaRunning
+                  ? 'border-[#FF6B4A] text-[#FF6B4A] font-semibold bg-[#FF6B4A]/5'
                   : 'border-gray-200 text-gray-500 hover:bg-gray-50/50'
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className={`h-5 w-5 rounded-full flex items-center justify-center transition-all ${
-                  checklist.ollamaRunning ? 'bg-[#FF6B4A] text-white' : 'border border-gray-300'
-                }`}>
+                <div
+                  className={`h-5 w-5 rounded-full flex items-center justify-center transition-all ${
+                    checklist.ollamaRunning ? 'bg-[#FF6B4A] text-white' : 'border border-gray-300'
+                  }`}
+                >
                   {checklist.ollamaRunning && <span className="text-[10px]">✓</span>}
                 </div>
                 <span className="text-xs">Ollama is running (ollama serve)</span>
@@ -509,51 +557,57 @@ export default function SetupPage() {
             </div>
 
             {/* Checkbox 3 */}
-            <div 
+            <div
               onClick={() => toggleChecklist('urlSet')}
               className={`flex items-center gap-3 p-3.5 bg-white border rounded-xl cursor-pointer select-none transition-all ${
-                checklist.urlSet 
-                  ? 'border-[#FF6B4A] text-[#FF6B4A] font-semibold bg-[#FF6B4A]/5' 
+                checklist.urlSet
+                  ? 'border-[#FF6B4A] text-[#FF6B4A] font-semibold bg-[#FF6B4A]/5'
                   : 'border-gray-200 text-gray-500 hover:bg-gray-50/50'
               }`}
             >
-              <div className={`h-5 w-5 rounded-full flex items-center justify-center transition-all ${
-                checklist.urlSet ? 'bg-[#FF6B4A] text-white' : 'border border-gray-300'
-              }`}>
+              <div
+                className={`h-5 w-5 rounded-full flex items-center justify-center transition-all ${
+                  checklist.urlSet ? 'bg-[#FF6B4A] text-white' : 'border border-gray-300'
+                }`}
+              >
                 {checklist.urlSet && <span className="text-[10px]">✓</span>}
               </div>
               <span className="text-xs">Ollama URL is set in ViralSpy Settings</span>
             </div>
 
             {/* Checkbox 4 */}
-            <div 
+            <div
               onClick={() => toggleChecklist('testConnection')}
               className={`flex items-center gap-3 p-3.5 bg-white border rounded-xl cursor-pointer select-none transition-all ${
-                checklist.testConnection 
-                  ? 'border-[#FF6B4A] text-[#FF6B4A] font-semibold bg-[#FF6B4A]/5' 
+                checklist.testConnection
+                  ? 'border-[#FF6B4A] text-[#FF6B4A] font-semibold bg-[#FF6B4A]/5'
                   : 'border-gray-200 text-gray-500 hover:bg-gray-50/50'
               }`}
             >
-              <div className={`h-5 w-5 rounded-full flex items-center justify-center transition-all ${
-                checklist.testConnection ? 'bg-[#FF6B4A] text-white' : 'border border-gray-300'
-              }`}>
+              <div
+                className={`h-5 w-5 rounded-full flex items-center justify-center transition-all ${
+                  checklist.testConnection ? 'bg-[#FF6B4A] text-white' : 'border border-gray-300'
+                }`}
+              >
                 {checklist.testConnection && <span className="text-[10px]">✓</span>}
               </div>
               <span className="text-xs">Test Connection shows green ✓</span>
             </div>
 
             {/* Checkbox 5 */}
-            <div 
+            <div
               onClick={() => toggleChecklist('ready')}
               className={`flex items-center gap-3 p-3.5 bg-white border rounded-xl cursor-pointer select-none transition-all ${
-                checklist.ready 
-                  ? 'border-[#FF6B4A] text-[#FF6B4A] font-semibold bg-[#FF6B4A]/5' 
+                checklist.ready
+                  ? 'border-[#FF6B4A] text-[#FF6B4A] font-semibold bg-[#FF6B4A]/5'
                   : 'border-gray-200 text-gray-500 hover:bg-gray-50/50'
               }`}
             >
-              <div className={`h-5 w-5 rounded-full flex items-center justify-center transition-all ${
-                checklist.ready ? 'bg-[#FF6B4A] text-white' : 'border border-gray-300'
-              }`}>
+              <div
+                className={`h-5 w-5 rounded-full flex items-center justify-center transition-all ${
+                  checklist.ready ? 'bg-[#FF6B4A] text-white' : 'border border-gray-300'
+                }`}
+              >
                 {checklist.ready && <span className="text-[10px]">✓</span>}
               </div>
               <span className="text-xs">Ready to generate briefs! 🚀</span>
@@ -577,42 +631,60 @@ export default function SetupPage() {
 
         {/* SECTION 3 — FRESH INSTALL GUIDE */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-card space-y-4">
-          <button 
+          <button
             onClick={() => setInstallGuideExpanded(!installGuideExpanded)}
             className="w-full flex items-center justify-between font-bold text-gray-900 hover:text-[#FF6B4A] transition-colors"
           >
             <span className="text-lg">🆕 First time? Install Ollama</span>
-            {installGuideExpanded ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
+            {installGuideExpanded ? (
+              <ChevronUp className="h-5 w-5 text-gray-500" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-gray-500" />
+            )}
           </button>
 
           {installGuideExpanded && (
             <div className="space-y-6 pt-2 border-t border-gray-100 animate-fade-in">
               {/* STEP 1 */}
               <div className="space-y-3">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-700">STEP 1 — Download Ollama</h3>
-                
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-700">
+                  STEP 1 — Download Ollama
+                </h3>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <a 
+                  <a
                     href="https://ollama.com/download/OllamaSetup.exe"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="border border-blue-200 hover:border-blue-400 bg-blue-50/20 hover:bg-blue-50/45 p-4 rounded-xl text-left block transition-all"
                   >
-                    <span className="font-bold text-blue-700 text-xs block mb-1">🪟 Windows Installer</span>
-                    <span className="text-[10px] text-blue-500 font-medium block">Windows 10 / 11</span>
+                    <span className="font-bold text-blue-700 text-xs block mb-1">
+                      🪟 Windows Installer
+                    </span>
+                    <span className="text-[10px] text-blue-500 font-medium block">
+                      Windows 10 / 11
+                    </span>
                   </a>
-                  <a 
+                  <a
                     href="https://ollama.com/download/Ollama-darwin.zip"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="border border-gray-200 hover:border-gray-300 bg-gray-50/45 hover:bg-gray-50/70 p-4 rounded-xl text-left block transition-all"
                   >
-                    <span className="font-bold text-gray-855 text-xs block mb-1">🍎 Mac Download</span>
-                    <span className="text-[10px] text-gray-400 font-medium block">Apple Silicon / Intel</span>
+                    <span className="font-bold text-gray-855 text-xs block mb-1">
+                      🍎 Mac Download
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-medium block">
+                      Apple Silicon / Intel
+                    </span>
                   </a>
                   <div className="border border-orange-200 bg-orange-50/10 p-4 rounded-xl text-left">
-                    <span className="font-bold text-orange-700 text-xs block mb-1">🐧 Linux Installation</span>
-                    <span className="text-[10px] text-orange-500 font-medium block mb-2">One command:</span>
+                    <span className="font-bold text-orange-700 text-xs block mb-1">
+                      🐧 Linux Installation
+                    </span>
+                    <span className="text-[10px] text-orange-500 font-medium block mb-2">
+                      One command:
+                    </span>
                     <CopyCodeBlock code="curl -fsSL https://ollama.com/install.sh | sh" />
                   </div>
                 </div>
@@ -620,23 +692,34 @@ export default function SetupPage() {
 
               {/* STEP 2 */}
               <div className="space-y-3">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-700">STEP 2 — Choose and download a model</h3>
-                
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-700">
+                  STEP 2 — Choose and download a model
+                </h3>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {/* Card 1 */}
                   <div className="border border-orange-200 bg-orange-50/5 p-4 rounded-xl flex flex-col justify-between min-h-[240px] relative transition-all">
                     <div>
-                      <span className="bg-orange-100 text-[#FF6B4A] text-[8px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wide block w-fit mb-1.5">🌟 RECOMMENDED</span>
-                      <span className="font-bold text-gray-800 text-xs block mb-1">Llama 3 (8B)</span>
+                      <span className="bg-orange-100 text-[#FF6B4A] text-[8px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wide block w-fit mb-1.5">
+                        🌟 RECOMMENDED
+                      </span>
+                      <span className="font-bold text-gray-800 text-xs block mb-1">
+                        Llama 3 (8B)
+                      </span>
                       <p className="text-[10px] text-gray-500 mt-1 leading-normal">
-                        Size: 4.7 GB<br/>
-                        RAM needed: 8 GB<br/>
-                        Speed: ⚡ Fast<br/>
+                        Size: 4.7 GB
+                        <br />
+                        RAM needed: 8 GB
+                        <br />
+                        Speed: ⚡ Fast
+                        <br />
                         Quality: ★★★★☆
                       </p>
                     </div>
                     <div className="mt-4">
-                      <span className="text-[9px] text-gray-450 font-bold block mb-1">Run this command:</span>
+                      <span className="text-[9px] text-gray-450 font-bold block mb-1">
+                        Run this command:
+                      </span>
                       <CopyCodeBlock code="ollama pull llama3" />
                     </div>
                   </div>
@@ -644,17 +727,26 @@ export default function SetupPage() {
                   {/* Card 2 */}
                   <div className="border border-gray-250 p-4 rounded-xl flex flex-col justify-between min-h-[240px] relative transition-all">
                     <div>
-                      <span className="bg-green-100 text-green-700 text-[8px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wide block w-fit mb-1.5">🐣 LOW-END COMPUTERS</span>
-                      <span className="font-bold text-gray-800 text-xs block mb-1">Gemma 3 (4B)</span>
+                      <span className="bg-green-100 text-green-700 text-[8px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wide block w-fit mb-1.5">
+                        🐣 LOW-END COMPUTERS
+                      </span>
+                      <span className="font-bold text-gray-800 text-xs block mb-1">
+                        Gemma 3 (4B)
+                      </span>
                       <p className="text-[10px] text-gray-500 mt-1 leading-normal">
-                        Size: 2.5 GB<br/>
-                        RAM needed: 4 GB<br/>
-                        Speed: ⚡⚡ Very Fast<br/>
+                        Size: 2.5 GB
+                        <br />
+                        RAM needed: 4 GB
+                        <br />
+                        Speed: ⚡⚡ Very Fast
+                        <br />
                         Quality: ★★★☆☆
                       </p>
                     </div>
                     <div className="mt-4">
-                      <span className="text-[9px] text-gray-450 font-bold block mb-1">Run this command:</span>
+                      <span className="text-[9px] text-gray-450 font-bold block mb-1">
+                        Run this command:
+                      </span>
                       <CopyCodeBlock code="ollama pull gemma3" />
                     </div>
                   </div>
@@ -662,17 +754,26 @@ export default function SetupPage() {
                   {/* Card 3 */}
                   <div className="border border-gray-250 p-4 rounded-xl flex flex-col justify-between min-h-[240px] relative transition-all">
                     <div>
-                      <span className="bg-blue-100 text-blue-700 text-[8px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wide block w-fit mb-1.5">💪 POWERFUL COMPUTERS</span>
-                      <span className="font-bold text-gray-800 text-xs block mb-1">Llama 3 (70B)</span>
+                      <span className="bg-blue-100 text-blue-700 text-[8px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wide block w-fit mb-1.5">
+                        💪 POWERFUL COMPUTERS
+                      </span>
+                      <span className="font-bold text-gray-800 text-xs block mb-1">
+                        Llama 3 (70B)
+                      </span>
                       <p className="text-[10px] text-gray-500 mt-1 leading-normal">
-                        Size: 40 GB<br/>
-                        RAM needed: 48 GB<br/>
-                        Speed: 🐢 Slow<br/>
+                        Size: 40 GB
+                        <br />
+                        RAM needed: 48 GB
+                        <br />
+                        Speed: 🐢 Slow
+                        <br />
                         Quality: ★★★★★
                       </p>
                     </div>
                     <div className="mt-4">
-                      <span className="text-[9px] text-gray-450 font-bold block mb-1">Run this command:</span>
+                      <span className="text-[9px] text-gray-450 font-bold block mb-1">
+                        Run this command:
+                      </span>
                       <CopyCodeBlock code="ollama pull llama3:70b" />
                     </div>
                   </div>
@@ -684,17 +785,28 @@ export default function SetupPage() {
 
                 {/* How to run the pull command */}
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-150 space-y-2 mt-3 text-left">
-                  <span className="text-[10px] text-gray-400 font-extrabold uppercase">How to run the pull command:</span>
+                  <span className="text-[10px] text-gray-400 font-extrabold uppercase">
+                    How to run the pull command:
+                  </span>
                   {selectedOS === 'windows' ? (
                     <div className="text-xs text-gray-650 space-y-2.5">
-                      <p>1. Press <strong>Windows + R</strong> → type <code className="bg-white px-1.5 py-0.5 rounded border border-gray-200 font-mono">cmd</code> → Enter</p>
+                      <p>
+                        1. Press <strong>Windows + R</strong> → type{' '}
+                        <code className="bg-white px-1.5 py-0.5 rounded border border-gray-200 font-mono">
+                          cmd
+                        </code>{' '}
+                        → Enter
+                      </p>
                       <p>2. Paste this and press Enter:</p>
                       <CopyCodeBlock code="ollama pull llama3" />
                       <p>3. Wait 5-10 minutes for download</p>
                       <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3.5 rounded-xl text-xs flex gap-2">
                         <span className="shrink-0">⏳</span>
                         <div>
-                          <strong>Progress note:</strong> You'll see: <code className="font-mono text-[11px]">pulling manifest...</code>, <code className="font-mono text-[11px]">pulling abc123... ████ 45%</code>. That means it's working! Just wait.
+                          <strong>Progress note:</strong> You'll see:{' '}
+                          <code className="font-mono text-[11px]">pulling manifest...</code>,{' '}
+                          <code className="font-mono text-[11px]">pulling abc123... ████ 45%</code>.
+                          That means it's working! Just wait.
                         </div>
                       </div>
                     </div>
@@ -709,7 +821,9 @@ export default function SetupPage() {
 
               {/* STEP 3 */}
               <div className="space-y-3">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-700">STEP 3 — Verify installation</h3>
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-700">
+                  STEP 3 — Verify installation
+                </h3>
                 <div className="text-xs text-gray-650 bg-gray-50 p-4 rounded-xl border border-gray-150 space-y-2 text-left">
                   <p>Test Ollama is working by running this in your terminal:</p>
                   <CopyCodeBlock code="curl http://localhost:11434/api/tags" />
@@ -730,7 +844,10 @@ export default function SetupPage() {
             <div className="space-y-4">
               <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-xs">
                 <p className="font-bold mb-1">🪟 Windows WSL Users:</p>
-                <p>Ollama runs inside Linux (WSL), not Windows. You need your WSL IP address — not localhost.</p>
+                <p>
+                  Ollama runs inside Linux (WSL), not Windows. You need your WSL IP address — not
+                  localhost.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -747,8 +864,10 @@ export default function SetupPage() {
                   <span className="font-bold text-gray-800 text-xs block">Enter in Settings</span>
                   <div className="space-y-2">
                     <div>
-                      <label className="text-[10px] font-extrabold uppercase tracking-wide text-gray-450 block mb-1">Ollama URL</label>
-                      <input 
+                      <label className="text-[10px] font-extrabold uppercase tracking-wide text-gray-450 block mb-1">
+                        Ollama URL
+                      </label>
+                      <input
                         type="text"
                         value={inputUrl}
                         onChange={(e) => setInputUrl(e.target.value)}
@@ -757,8 +876,10 @@ export default function SetupPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-extrabold uppercase tracking-wide text-gray-450 block mb-1">Model</label>
-                      <input 
+                      <label className="text-[10px] font-extrabold uppercase tracking-wide text-gray-450 block mb-1">
+                        Model
+                      </label>
+                      <input
                         type="text"
                         value={inputModel}
                         onChange={(e) => setInputModel(e.target.value)}
@@ -776,8 +897,10 @@ export default function SetupPage() {
                 <span className="font-bold text-gray-800 text-xs block">Easy! Just use:</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-extrabold uppercase tracking-wide text-gray-450 block mb-1">Ollama URL</label>
-                    <input 
+                    <label className="text-[10px] font-extrabold uppercase tracking-wide text-gray-450 block mb-1">
+                      Ollama URL
+                    </label>
+                    <input
                       type="text"
                       value={inputUrl}
                       onChange={(e) => setInputUrl(e.target.value)}
@@ -786,8 +909,10 @@ export default function SetupPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-extrabold uppercase tracking-wide text-gray-450 block mb-1">Model</label>
-                    <input 
+                    <label className="text-[10px] font-extrabold uppercase tracking-wide text-gray-450 block mb-1">
+                      Model
+                    </label>
+                    <input
                       type="text"
                       value={inputModel}
                       onChange={(e) => setInputModel(e.target.value)}
@@ -845,7 +970,9 @@ export default function SetupPage() {
           {(autoDetectMessage || showSaved) && (
             <div className="flex items-center gap-3 justify-end text-xs font-bold">
               {autoDetectMessage && (
-                <span className={autoDetectStatus === 'success' ? 'text-green-600' : 'text-red-500'}>
+                <span
+                  className={autoDetectStatus === 'success' ? 'text-green-600' : 'text-red-500'}
+                >
                   {autoDetectMessage}
                 </span>
               )}
@@ -862,18 +989,24 @@ export default function SetupPage() {
         <section className="bg-white border border-gray-200 rounded-2xl p-6 shadow-card space-y-4">
           <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
             <HelpCircle className="h-4 w-4 text-[#FF6B4A]" />
-            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800">Having problems? Click to expand:</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800">
+              Having problems? Click to expand:
+            </h2>
           </div>
 
           <div className="divide-y divide-gray-150 text-xs">
             {/* Item 1 */}
             <div className="py-3">
-              <button 
+              <button
                 onClick={() => toggleExpanded('inUse')}
                 className="w-full flex items-center justify-between font-bold text-gray-700 hover:text-[#FF6B4A] transition-colors"
               >
                 <span>▶ "Address already in use" error</span>
-                {expanded.inUse ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                {expanded.inUse ? (
+                  <ChevronUp className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                )}
               </button>
               {expanded.inUse && (
                 <div className="mt-2 text-gray-605 leading-relaxed animate-fade-in pl-1 space-y-2 text-left">
@@ -887,30 +1020,44 @@ export default function SetupPage() {
 
             {/* Item 2 */}
             <div className="py-3">
-              <button 
+              <button
                 onClick={() => toggleExpanded('cors')}
                 className="w-full flex items-center justify-between font-bold text-gray-700 hover:text-[#FF6B4A] transition-colors animate-fade-in"
               >
                 <span>▶ ViralSpy can't connect (fetch failed)</span>
-                {expanded.cors ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                {expanded.cors ? (
+                  <ChevronUp className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                )}
               </button>
               {expanded.cors && (
                 <div className="mt-2 text-gray-605 leading-relaxed animate-fade-in pl-1 space-y-2 text-left">
                   <p>Ollama is blocking browser requests (CORS). Always start Ollama with:</p>
                   <CopyCodeBlock code="OLLAMA_HOST=0.0.0.0:11434 OLLAMA_ORIGINS='*' ollama serve" />
-                  <p className="font-semibold text-gray-800">The <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[11px] text-[#FF6B4A]">OLLAMA_ORIGINS='*'</code> part is critical for ViralSpy to connect.</p>
+                  <p className="font-semibold text-gray-800">
+                    The{' '}
+                    <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[11px] text-[#FF6B4A]">
+                      OLLAMA_ORIGINS='*'
+                    </code>{' '}
+                    part is critical for ViralSpy to connect.
+                  </p>
                 </div>
               )}
             </div>
 
             {/* Item 3 */}
             <div className="py-3">
-              <button 
+              <button
                 onClick={() => toggleExpanded('ipChanged')}
                 className="w-full flex items-center justify-between font-bold text-gray-700 hover:text-[#FF6B4A] transition-colors"
               >
                 <span>▶ My WSL IP changed after reboot</span>
-                {expanded.ipChanged ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                {expanded.ipChanged ? (
+                  <ChevronUp className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                )}
               </button>
               {expanded.ipChanged && (
                 <div className="mt-2 text-gray-650 leading-relaxed animate-fade-in pl-1 space-y-2 text-left">
@@ -923,12 +1070,16 @@ export default function SetupPage() {
 
             {/* Item 4 */}
             <div className="py-3">
-              <button 
+              <button
                 onClick={() => toggleExpanded('slow')}
                 className="w-full flex items-center justify-between font-bold text-gray-700 hover:text-[#FF6B4A] transition-colors"
               >
                 <span>▶ Download is very slow</span>
-                {expanded.slow ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                {expanded.slow ? (
+                  <ChevronUp className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                )}
               </button>
               {expanded.slow && (
                 <p className="mt-2 text-gray-600 leading-relaxed animate-fade-in pl-1 text-left">
@@ -939,35 +1090,49 @@ export default function SetupPage() {
 
             {/* Item 5 */}
             <div className="py-3">
-              <button 
+              <button
                 onClick={() => toggleExpanded('ram')}
                 className="w-full flex items-center justify-between font-bold text-gray-700 hover:text-[#FF6B4A] transition-colors"
               >
                 <span>▶ Not enough RAM</span>
-                {expanded.ram ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                {expanded.ram ? (
+                  <ChevronUp className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                )}
               </button>
               {expanded.ram && (
                 <div className="mt-2 text-gray-600 leading-relaxed animate-fade-in pl-1 space-y-2 text-left">
                   <p>Try pulling the smaller Gemma 3 model instead:</p>
                   <CopyCodeBlock code="ollama pull gemma3" />
-                  <p>Then change the model to <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[11px] text-[#FF6B4A]">gemma3</code> in Settings.</p>
+                  <p>
+                    Then change the model to{' '}
+                    <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[11px] text-[#FF6B4A]">
+                      gemma3
+                    </code>{' '}
+                    in Settings.
+                  </p>
                 </div>
               )}
             </div>
 
             {/* Item 6 */}
             <div className="py-3">
-              <button 
+              <button
                 onClick={() => toggleExpanded('cloud')}
                 className="w-full flex items-center justify-between font-bold text-gray-700 hover:text-[#FF6B4A] transition-colors"
               >
                 <span>▶ I want to use cloud API instead</span>
-                {expanded.cloud ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                {expanded.cloud ? (
+                  <ChevronUp className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                )}
               </button>
               {expanded.cloud && (
                 <div className="mt-2 text-gray-600 leading-relaxed animate-fade-in pl-1 space-y-2 text-left">
                   <p>No problem! Go to Settings → select BYOK. Groq is free and instant:</p>
-                  <a 
+                  <a
                     href="https://console.groq.com/keys"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -1008,7 +1173,6 @@ export default function SetupPage() {
             Need a cloud API instead? Use BYOK in Settings →
           </button>
         </div>
-
       </main>
 
       {/* Footer Bar */}
@@ -1016,5 +1180,5 @@ export default function SetupPage() {
         <div>© 2026 ViralSpy.</div>
       </footer>
     </div>
-  );
+  )
 }

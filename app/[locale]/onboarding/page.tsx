@@ -1,13 +1,25 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../components/AuthProvider';
-import { saveUserProfile } from '../../../lib/supabase';
-import { NicheType } from '../../../types';
-import { Check, ArrowRight, ArrowLeft, Eye, EyeOff, Sparkles, AlertCircle, Cpu, Key, Database, Globe } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
-import ProviderSetupGuide, { GuideProvider } from '../../../components/ProviderSetupGuide';
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '../../../components/AuthProvider'
+import { saveUserProfile } from '../../../lib/supabase'
+import { NicheType } from '../../../types'
+import {
+  Check,
+  ArrowRight,
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Sparkles,
+  AlertCircle,
+  Cpu,
+  Key,
+  Database,
+  Globe,
+} from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
+import ProviderSetupGuide, { GuideProvider } from '../../../components/ProviderSetupGuide'
 
 const NICHES: { id: NicheType; label: string; desc: string; emoji: string }[] = [
   { id: 'fitness', label: 'Fitness', desc: 'Workouts, nutrition, gym', emoji: '🏋️' },
@@ -19,64 +31,86 @@ const NICHES: { id: NicheType; label: string; desc: string; emoji: string }[] = 
   { id: 'gaming', label: 'Gaming', desc: 'Walkthroughs, clip edits', emoji: '🎮' },
   { id: 'travel', label: 'Travel', desc: 'Points,POV tours, itineraries', emoji: '✈️' },
   { id: 'education', label: 'Education', desc: 'Productivity, explanations', emoji: '📚' },
-  { id: 'comedy', label: 'Comedy', desc: 'Skits, reactions, humor', emoji: '🎭' }
-];
+  { id: 'comedy', label: 'Comedy', desc: 'Skits, reactions, humor', emoji: '🎭' },
+]
 
 const PLATFORMS = [
-  { id: 'YOUTUBE', label: 'YouTube Shorts', color: 'text-red-500 bg-red-50 border-red-100 hover:border-red-300' },
-  { id: 'INSTAGRAM', label: 'Instagram Reels', color: 'text-pink-500 bg-pink-50 border-pink-100 hover:border-pink-300' },
-  { id: 'REDDIT', label: 'Reddit Boards', color: 'text-orange-500 bg-orange-50 border-orange-100 hover:border-orange-300' },
-  { id: 'X', label: 'X (Twitter)', color: 'text-gray-800 bg-gray-50 border-gray-200 hover:border-gray-300' },
-  { id: 'ALL', label: 'All Platforms', color: 'text-[#FF6B4A] bg-orange-50 border-orange-150 hover:border-[#FF6B4A]' }
-];
+  {
+    id: 'YOUTUBE',
+    label: 'YouTube Shorts',
+    color: 'text-red-500 bg-red-50 border-red-100 hover:border-red-300',
+  },
+  {
+    id: 'INSTAGRAM',
+    label: 'Instagram Reels',
+    color: 'text-pink-500 bg-pink-50 border-pink-100 hover:border-pink-300',
+  },
+  {
+    id: 'REDDIT',
+    label: 'Reddit Boards',
+    color: 'text-orange-500 bg-orange-50 border-orange-100 hover:border-orange-300',
+  },
+  {
+    id: 'X',
+    label: 'X (Twitter)',
+    color: 'text-gray-800 bg-gray-50 border-gray-200 hover:border-gray-300',
+  },
+  {
+    id: 'ALL',
+    label: 'All Platforms',
+    color: 'text-[#FF6B4A] bg-orange-50 border-orange-150 hover:border-[#FF6B4A]',
+  },
+]
 
 const FOLLOWER_TIERS = [
   { id: 'tier_1', label: '< 1K', value: 500, desc: 'Starting your creator journey' },
   { id: 'tier_2', label: '1K – 10K', value: 5000, desc: 'Micro community presence' },
   { id: 'tier_3', label: '10K – 100K', value: 50000, desc: 'Rapidly growing audience' },
-  { id: 'tier_4', label: '100K +', value: 250000, desc: 'Established authority brand' }
-];
+  { id: 'tier_4', label: '100K +', value: 250000, desc: 'Established authority brand' },
+]
 
-type AIProvider = 'ollama' | 'byok';
+type AIProvider = 'ollama' | 'byok'
 
 export default function OnboardingPage() {
-  const router = useRouter();
-  const { user, loading, refreshUser } = useAuth();
-  const [currentStep, setCurrentStep] = useState(1);
-  const t = useTranslations('onboarding');
-  const locale = useLocale();
-  
+  const router = useRouter()
+  const { user, loading, refreshUser } = useAuth()
+  const [currentStep, setCurrentStep] = useState(1)
+  const t = useTranslations('onboarding')
+  const locale = useLocale()
+
   // Skip logic states
-  const [skippedStep1, setSkippedStep1] = useState(false);
-  const [configuredProviderLabel, setConfiguredProviderLabel] = useState('');
+  const [skippedStep1, setSkippedStep1] = useState(false)
+  const [configuredProviderLabel, setConfiguredProviderLabel] = useState('')
 
   // Step 1 Selection States (AI Provider)
-  const [provider, setProvider] = useState<AIProvider>('ollama');
-  const [selectedCard, setSelectedCard] = useState<'ollama' | 'groq' | 'gemini' | 'openai' | 'custom'>('ollama');
-  const [byokKey, setByokKey] = useState('');
-  const [byokProvider, setByokProvider] = useState<'gemini' | 'openai' | 'custom'>('openai');
-  const [byokBaseUrl, setByokBaseUrl] = useState('https://api.openai.com/v1');
-  const [byokModel, setByokModel] = useState('gpt-4o');
-  const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
-  const [ollamaModel, setOllamaModel] = useState('llama3');
+  const [provider, setProvider] = useState<AIProvider>('ollama')
+  const [selectedCard, setSelectedCard] = useState<
+    'ollama' | 'groq' | 'gemini' | 'openai' | 'custom'
+  >('ollama')
+  const [byokKey, setByokKey] = useState('')
+  const [byokProvider, setByokProvider] = useState<'gemini' | 'openai' | 'custom'>('openai')
+  const [byokBaseUrl, setByokBaseUrl] = useState('https://api.openai.com/v1')
+  const [byokModel, setByokModel] = useState('gpt-4o')
+  const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434')
+  const [ollamaModel, setOllamaModel] = useState('llama3')
 
   // UI States for inline key testing
-  const [showKey, setShowKey] = useState(false);
-  const [testingKey, setTestingKey] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [showKey, setShowKey] = useState(false)
+  const [testingKey, setTestingKey] = useState(false)
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
   // Guide Modal States
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [guideProvider, setGuideProvider] = useState<GuideProvider>('ollama');
+  const [isGuideOpen, setIsGuideOpen] = useState(false)
+  const [guideProvider, setGuideProvider] = useState<GuideProvider>('ollama')
 
   const handleOpenGuide = (prov: GuideProvider) => {
-    setGuideProvider(prov);
-    setIsGuideOpen(true);
-  };
+    setGuideProvider(prov)
+    setIsGuideOpen(true)
+  }
 
   const handleTestAPI = async () => {
-    setTestingKey(true);
-    setTestResult(null);
+    setTestingKey(true)
+    setTestResult(null)
     try {
       const res = await fetch('/api/test-key', {
         method: 'POST',
@@ -85,50 +119,50 @@ export default function OnboardingPage() {
           key: byokKey,
           provider: byokProvider,
           baseUrl: byokBaseUrl,
-          model: byokModel
-        })
-      });
-      const data = await res.json();
+          model: byokModel,
+        }),
+      })
+      const data = await res.json()
       setTestResult({
         success: data.valid,
-        message: data.message
-      });
+        message: data.message,
+      })
     } catch (e: any) {
       setTestResult({
         success: false,
-        message: e.message || 'Verification failed.'
-      });
+        message: e.message || 'Verification failed.',
+      })
     } finally {
-      setTestingKey(false);
+      setTestingKey(false)
     }
-  };
+  }
 
   const handleSelectCard = (card: 'ollama' | 'groq' | 'gemini' | 'openai' | 'custom') => {
-    setSelectedCard(card);
-    setTestResult(null);
+    setSelectedCard(card)
+    setTestResult(null)
     if (card === 'ollama') {
-      setProvider('ollama');
+      setProvider('ollama')
     } else {
-      setProvider('byok');
+      setProvider('byok')
       if (card === 'groq') {
-        setByokProvider('openai');
-        setByokBaseUrl('https://api.groq.com/openai/v1');
-        setByokModel('llama-3.3-70b-versatile');
+        setByokProvider('openai')
+        setByokBaseUrl('https://api.groq.com/openai/v1')
+        setByokModel('llama-3.3-70b-versatile')
       } else if (card === 'gemini') {
-        setByokProvider('gemini');
-        setByokBaseUrl('');
-        setByokModel('gemini-2.0-flash');
+        setByokProvider('gemini')
+        setByokBaseUrl('')
+        setByokModel('gemini-2.0-flash')
       } else if (card === 'openai') {
-        setByokProvider('openai');
-        setByokBaseUrl('https://api.openai.com/v1');
-        setByokModel('gpt-4o');
+        setByokProvider('openai')
+        setByokBaseUrl('https://api.openai.com/v1')
+        setByokModel('gpt-4o')
       } else if (card === 'custom') {
-        setByokProvider('custom');
-        setByokBaseUrl('');
-        setByokModel('');
+        setByokProvider('custom')
+        setByokBaseUrl('')
+        setByokModel('')
       }
     }
-  };
+  }
 
   const handleModalComplete = (newConfig: any) => {
     const aiConfig = {
@@ -138,130 +172,149 @@ export default function OnboardingPage() {
       byokBaseUrl: newConfig.byokBaseUrl || '',
       byokModel: newConfig.byokModel || '',
       ollamaUrl: newConfig.ollamaUrl || 'http://localhost:11434',
-      ollamaModel: newConfig.ollamaModel || 'llama3'
-    };
-    localStorage.setItem('viralspy_ai_config', JSON.stringify(aiConfig));
+      ollamaModel: newConfig.ollamaModel || 'llama3',
+    }
+    localStorage.setItem('viralspy_ai_config', JSON.stringify(aiConfig))
 
-    setProvider(newConfig.provider);
-    if (newConfig.byokKey !== undefined) setByokKey(newConfig.byokKey);
-    if (newConfig.byokProvider !== undefined) setByokProvider(newConfig.byokProvider);
-    if (newConfig.byokBaseUrl !== undefined) setByokBaseUrl(newConfig.byokBaseUrl);
-    if (newConfig.byokModel !== undefined) setByokModel(newConfig.byokModel);
-    if (newConfig.ollamaUrl !== undefined) setOllamaUrl(newConfig.ollamaUrl);
-    if (newConfig.ollamaModel !== undefined) setOllamaModel(newConfig.ollamaModel);
+    setProvider(newConfig.provider)
+    if (newConfig.byokKey !== undefined) setByokKey(newConfig.byokKey)
+    if (newConfig.byokProvider !== undefined) setByokProvider(newConfig.byokProvider)
+    if (newConfig.byokBaseUrl !== undefined) setByokBaseUrl(newConfig.byokBaseUrl)
+    if (newConfig.byokModel !== undefined) setByokModel(newConfig.byokModel)
+    if (newConfig.ollamaUrl !== undefined) setOllamaUrl(newConfig.ollamaUrl)
+    if (newConfig.ollamaModel !== undefined) setOllamaModel(newConfig.ollamaModel)
 
     if (newConfig.provider === 'ollama') {
-      setSelectedCard('ollama');
+      setSelectedCard('ollama')
     } else {
       if (newConfig.byokProvider === 'gemini') {
-        setSelectedCard('gemini');
+        setSelectedCard('gemini')
       } else if (newConfig.byokProvider === 'custom') {
-        setSelectedCard('custom');
+        setSelectedCard('custom')
       } else {
         if (newConfig.byokBaseUrl === 'https://api.groq.com/openai/v1') {
-          setSelectedCard('groq');
+          setSelectedCard('groq')
         } else if (newConfig.byokBaseUrl === 'https://api.openai.com/v1') {
-          setSelectedCard('openai');
+          setSelectedCard('openai')
         } else {
-          setSelectedCard('custom');
+          setSelectedCard('custom')
         }
       }
     }
 
     const labels: Record<string, string> = {
       ollama: 'Local AI',
-      byok: newConfig.byokProvider === 'gemini' ? 'Gemini' : newConfig.byokProvider === 'custom' ? 'Custom API' : newConfig.byokModel === 'llama-3.3-70b-versatile' ? 'Groq' : 'GPT-4o'
-    };
-    setConfiguredProviderLabel(labels[newConfig.provider] || 'Local AI');
-    setIsGuideOpen(false);
+      byok:
+        newConfig.byokProvider === 'gemini'
+          ? 'Gemini'
+          : newConfig.byokProvider === 'custom'
+            ? 'Custom API'
+            : newConfig.byokModel === 'llama-3.3-70b-versatile'
+              ? 'Groq'
+              : 'GPT-4o',
+    }
+    setConfiguredProviderLabel(labels[newConfig.provider] || 'Local AI')
+    setIsGuideOpen(false)
 
     // Automatically transition to step 2 after modal is successfully configured
-    setCurrentStep(2);
-  };
+    setCurrentStep(2)
+  }
 
   // Step 2, 3, 4 Selection States
-  const [selectedNiches, setSelectedNiches] = useState<NicheType[]>([]);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [selectedFollowers, setSelectedFollowers] = useState<string>('');
-  
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [selectedNiches, setSelectedNiches] = useState<NicheType[]>([])
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
+  const [selectedFollowers, setSelectedFollowers] = useState<string>('')
+
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   // Check on mount if AI Config already exists
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('viralspy_ai_config');
+      const stored = localStorage.getItem('viralspy_ai_config')
       if (stored) {
         try {
-          const parsed = JSON.parse(stored);
+          const parsed = JSON.parse(stored)
           if (parsed && parsed.provider) {
             const labels: Record<string, string> = {
               ollama: 'Local AI',
-              byok: parsed.byokProvider === 'gemini' ? 'Gemini' : parsed.byokProvider === 'custom' ? 'Custom API' : parsed.byokModel === 'llama-3.3-70b-versatile' ? 'Groq' : 'GPT-4o'
-            };
-            setConfiguredProviderLabel(labels[parsed.provider] || 'Local AI');
-            setSkippedStep1(true);
-            setCurrentStep(2); // Start directly at Niches selection (Step 2)
+              byok:
+                parsed.byokProvider === 'gemini'
+                  ? 'Gemini'
+                  : parsed.byokProvider === 'custom'
+                    ? 'Custom API'
+                    : parsed.byokModel === 'llama-3.3-70b-versatile'
+                      ? 'Groq'
+                      : 'GPT-4o',
+            }
+            setConfiguredProviderLabel(labels[parsed.provider] || 'Local AI')
+            setSkippedStep1(true)
+            setCurrentStep(2) // Start directly at Niches selection (Step 2)
           }
         } catch (e) {}
       }
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace('/');
+      router.replace('/')
     }
-  }, [user, loading, router]);
+  }, [user, loading, router])
 
   const handleToggleNiche = (nicheId: NicheType) => {
-    setError('');
+    setError('')
     if (selectedNiches.includes(nicheId)) {
-      setSelectedNiches(selectedNiches.filter((n) => n !== nicheId));
+      setSelectedNiches(selectedNiches.filter((n) => n !== nicheId))
     } else {
       if (selectedNiches.length >= 3) {
-        setError('Maximum of 3 niches allowed.');
-        return;
+        setError('Maximum of 3 niches allowed.')
+        return
       }
-      setSelectedNiches([...selectedNiches, nicheId]);
+      setSelectedNiches([...selectedNiches, nicheId])
     }
-  };
+  }
 
   const handleTogglePlatform = (platformId: string) => {
-    setError('');
+    setError('')
     if (platformId === 'ALL') {
       if (selectedPlatforms.includes('ALL')) {
-        setSelectedPlatforms([]);
+        setSelectedPlatforms([])
       } else {
-        setSelectedPlatforms(['YOUTUBE', 'INSTAGRAM', 'REDDIT', 'X', 'ALL']);
+        setSelectedPlatforms(['YOUTUBE', 'INSTAGRAM', 'REDDIT', 'X', 'ALL'])
       }
-      return;
+      return
     }
 
-    let updated = [...selectedPlatforms].filter(p => p !== 'ALL');
+    let updated = [...selectedPlatforms].filter((p) => p !== 'ALL')
     if (updated.includes(platformId)) {
-      updated = updated.filter(p => p !== platformId);
+      updated = updated.filter((p) => p !== platformId)
     } else {
-      updated.push(platformId);
+      updated.push(platformId)
     }
 
-    if (updated.includes('YOUTUBE') && updated.includes('INSTAGRAM') && updated.includes('REDDIT') && updated.includes('X')) {
-      updated.push('ALL');
+    if (
+      updated.includes('YOUTUBE') &&
+      updated.includes('INSTAGRAM') &&
+      updated.includes('REDDIT') &&
+      updated.includes('X')
+    ) {
+      updated.push('ALL')
     }
-    
-    setSelectedPlatforms(updated);
-  };
+
+    setSelectedPlatforms(updated)
+  }
 
   const handleSaveAIConfig = () => {
-    setError('');
+    setError('')
     if (provider === 'byok') {
       if (!byokKey) {
-        setError('Please provide your API key.');
-        return;
+        setError('Please provide your API key.')
+        return
       }
       if (byokProvider === 'custom' && !byokBaseUrl) {
-        setError('Please provide a Base URL for your custom API.');
-        return;
+        setError('Please provide a Base URL for your custom API.')
+        return
       }
     }
 
@@ -272,18 +325,25 @@ export default function OnboardingPage() {
       byokBaseUrl: provider === 'byok' ? byokBaseUrl : '',
       byokModel: provider === 'byok' ? byokModel : '',
       ollamaUrl: provider === 'ollama' ? ollamaUrl : 'http://localhost:11434',
-      ollamaModel: provider === 'ollama' ? ollamaModel : 'llama3'
-    };
+      ollamaModel: provider === 'ollama' ? ollamaModel : 'llama3',
+    }
 
-    localStorage.setItem('viralspy_ai_config', JSON.stringify(aiConfig));
-    
+    localStorage.setItem('viralspy_ai_config', JSON.stringify(aiConfig))
+
     const labels: Record<string, string> = {
       ollama: 'Local AI',
-      byok: byokProvider === 'gemini' ? 'Gemini' : byokProvider === 'custom' ? 'Custom API' : selectedCard === 'groq' ? 'Groq' : 'GPT-4o'
-    };
-    setConfiguredProviderLabel(labels[provider] || 'Local AI');
-    setCurrentStep(2);
-  };
+      byok:
+        byokProvider === 'gemini'
+          ? 'Gemini'
+          : byokProvider === 'custom'
+            ? 'Custom API'
+            : selectedCard === 'groq'
+              ? 'Groq'
+              : 'GPT-4o',
+    }
+    setConfiguredProviderLabel(labels[provider] || 'Local AI')
+    setCurrentStep(2)
+  }
 
   const handleSkipAIConfig = () => {
     const aiConfig = {
@@ -293,55 +353,55 @@ export default function OnboardingPage() {
       byokBaseUrl: 'https://api.openai.com/v1',
       byokModel: '',
       ollamaUrl: 'http://localhost:11434',
-      ollamaModel: 'llama3'
-    };
-    localStorage.setItem('viralspy_ai_config', JSON.stringify(aiConfig));
-    setConfiguredProviderLabel('Local AI');
-    setCurrentStep(2);
-  };
+      ollamaModel: 'llama3',
+    }
+    localStorage.setItem('viralspy_ai_config', JSON.stringify(aiConfig))
+    setConfiguredProviderLabel('Local AI')
+    setCurrentStep(2)
+  }
 
   const handleNextStep = () => {
-    setError('');
+    setError('')
     if (currentStep === 2 && selectedNiches.length === 0) {
-      setError('Please select at least one niche.');
-      return;
+      setError('Please select at least one niche.')
+      return
     }
     if (currentStep === 3 && selectedPlatforms.length === 0) {
-      setError('Please select at least one platform.');
-      return;
+      setError('Please select at least one platform.')
+      return
     }
-    setCurrentStep((s) => s + 1);
-  };
+    setCurrentStep((s) => s + 1)
+  }
 
   const handlePrevStep = () => {
-    setError('');
+    setError('')
     // If skipped step 1 initially, and going back from step 2, don't go to step 1
     if (currentStep === 2 && skippedStep1) {
-      return;
+      return
     }
-    setCurrentStep((s) => s - 1);
-  };
+    setCurrentStep((s) => s - 1)
+  }
 
   const handleOnboardingComplete = async () => {
     if (!selectedFollowers) {
-      setError('Please select your subscriber count range.');
-      return;
+      setError('Please select your subscriber count range.')
+      return
     }
 
-    setSaving(true);
-    setError('');
+    setSaving(true)
+    setError('')
 
     try {
-      const followersVal = FOLLOWER_TIERS.find(f => f.id === selectedFollowers)?.value || 1000;
-      const cleanPlatforms = selectedPlatforms.filter(p => p !== 'ALL');
+      const followersVal = FOLLOWER_TIERS.find((f) => f.id === selectedFollowers)?.value || 1000
+      const cleanPlatforms = selectedPlatforms.filter((p) => p !== 'ALL')
 
       // Get current provider choice from localStorage to sync to Supabase
-      let localProvider = 'ollama';
+      let localProvider = 'ollama'
       try {
-        const stored = localStorage.getItem('viralspy_ai_config');
+        const stored = localStorage.getItem('viralspy_ai_config')
         if (stored) {
-          const parsed = JSON.parse(stored);
-          localProvider = parsed.provider || 'ollama';
+          const parsed = JSON.parse(stored)
+          localProvider = parsed.provider || 'ollama'
         }
       } catch (e) {}
 
@@ -352,32 +412,34 @@ export default function OnboardingPage() {
         platforms: cleanPlatforms,
         subscriber_count: followersVal,
         ai_provider: localProvider,
-        onboarded: true
-      });
+        onboarded: true,
+      })
 
-      await refreshUser();
-      router.push('/dashboard');
+      await refreshUser()
+      router.push('/dashboard')
     } catch (err) {
-      console.error('Onboarding save error:', err);
-      setError('Failed to save preferences. Please try again.');
-      setSaving(false);
+      console.error('Onboarding save error:', err)
+      setError('Failed to save preferences. Please try again.')
+      setSaving(false)
     }
-  };
+  }
 
   const getStepName = (step: number) => {
-    if (step === 1) return 'AI Provider';
-    if (step === 2) return t('step1');
-    if (step === 3) return t('step2');
-    return t('step3');
-  };
+    if (step === 1) return 'AI Provider'
+    if (step === 2) return t('step1')
+    if (step === 3) return t('step2')
+    return t('step3')
+  }
 
   if (loading || !user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#F7F5F2] text-[#6B7280] space-y-3">
         <Eye className="h-8 w-8 text-[#FF6B4A] animate-pulse" />
-        <div className="text-xs font-mono tracking-widest uppercase animate-pulse">Loading Profile...</div>
+        <div className="text-xs font-mono tracking-widest uppercase animate-pulse">
+          Loading Profile...
+        </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -388,27 +450,28 @@ export default function OnboardingPage() {
       {/* Header */}
       <header className="max-w-4xl mx-auto w-full py-6 border-b border-gray-200 flex justify-between items-center z-10">
         <div className="text-sm font-bold tracking-widest font-mono uppercase text-[#1A1A1A]">
-          VIRALSPY {"//"} ONBOARDING
+          VIRALSPY {'//'} ONBOARDING
         </div>
         <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
-          {getStepName(currentStep)} {"// STEP 0"}{currentStep}{" OF 04"}
+          {getStepName(currentStep)} {'// STEP 0'}
+          {currentStep}
+          {' OF 04'}
         </div>
       </header>
 
       {/* Main Form Container */}
       <main className="flex-grow flex items-center justify-center py-12 z-10">
         <div className="w-full max-w-[540px] bg-white border border-gray-200 rounded-2xl p-8 shadow-card space-y-6 overflow-hidden">
-          
           {/* Progress dots at top */}
           <div className="flex justify-center space-x-2.5 pb-2">
             {[1, 2, 3, 4].map((s) => (
               <div
                 key={s}
                 className={`h-2.5 rounded-full transition-all duration-300 ${
-                  currentStep === s 
-                    ? 'w-8 bg-[#FF6B4A]' 
-                    : s < currentStep 
-                      ? 'w-2.5 bg-orange-200' 
+                  currentStep === s
+                    ? 'w-8 bg-[#FF6B4A]'
+                    : s < currentStep
+                      ? 'w-2.5 bg-orange-200'
                       : 'w-2.5 bg-gray-200'
                 }`}
               />
@@ -424,15 +487,16 @@ export default function OnboardingPage() {
 
           {/* Sliding container */}
           <div className="overflow-hidden relative w-full">
-            <div 
-              className="flex transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1)" 
+            <div
+              className="flex transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1)"
               style={{ transform: `translateX(-${(currentStep - 1) * 100}%)`, width: '400%' }}
             >
-              
               {/* STEP 1: AI Provider selection */}
               <div className="w-1/4 flex-shrink-0 pr-2 pl-1 space-y-5">
                 <div className="space-y-1">
-                  <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">How should ViralSpy generate your briefs?</h2>
+                  <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">
+                    How should ViralSpy generate your briefs?
+                  </h2>
                   <p className="text-xs text-gray-500">You can change this anytime in Settings</p>
                 </div>
 
@@ -449,13 +513,21 @@ export default function OnboardingPage() {
                   >
                     <div>
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className="h-6 w-6 rounded-full bg-green-550 flex items-center justify-center text-xs">🦙</span>
-                        <span className="text-[8px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-bold uppercase">100% Free & Private</span>
+                        <span className="h-6 w-6 rounded-full bg-green-550 flex items-center justify-center text-xs">
+                          🦙
+                        </span>
+                        <span className="text-[8px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full font-bold uppercase">
+                          100% Free & Private
+                        </span>
                       </div>
                       <h3 className="text-xs font-bold uppercase text-gray-900">Local AI</h3>
-                      <p className="text-[10px] text-gray-400 mt-1 leading-normal">Runs on your machine. No API costs.</p>
+                      <p className="text-[10px] text-gray-400 mt-1 leading-normal">
+                        Runs on your machine. No API costs.
+                      </p>
                     </div>
-                    <div className="text-[9px] text-[#FF6B4A] font-bold mt-1">Pre-selected default</div>
+                    <div className="text-[9px] text-[#FF6B4A] font-bold mt-1">
+                      Pre-selected default
+                    </div>
                   </button>
 
                   {/* Card 2 — Groq */}
@@ -470,13 +542,23 @@ export default function OnboardingPage() {
                   >
                     <div>
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className="h-6 w-6 rounded-full bg-purple-500 flex items-center justify-center text-xs text-white">⚡</span>
-                        <span className="text-[8px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-bold uppercase">Free Tier</span>
+                        <span className="h-6 w-6 rounded-full bg-purple-500 flex items-center justify-center text-xs text-white">
+                          ⚡
+                        </span>
+                        <span className="text-[8px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-bold uppercase">
+                          Free Tier
+                        </span>
                       </div>
-                      <h3 className="text-xs font-bold uppercase text-gray-900">Groq (Fast & Free)</h3>
-                      <p className="text-[10px] text-gray-400 mt-1 leading-normal">Fastest AI inference. Free API key.</p>
+                      <h3 className="text-xs font-bold uppercase text-gray-900">
+                        Groq (Fast & Free)
+                      </h3>
+                      <p className="text-[10px] text-gray-400 mt-1 leading-normal">
+                        Fastest AI inference. Free API key.
+                      </p>
                     </div>
-                    <div className="text-[9px] text-gray-500 italic mt-1 leading-none">Free key required</div>
+                    <div className="text-[9px] text-gray-500 italic mt-1 leading-none">
+                      Free key required
+                    </div>
                   </button>
 
                   {/* Card 3 — Gemini */}
@@ -491,13 +573,21 @@ export default function OnboardingPage() {
                   >
                     <div>
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white">G</span>
-                        <span className="text-[8px] bg-blue-50 text-blue-655 px-1.5 py-0.5 rounded-full font-bold uppercase">Free Tier</span>
+                        <span className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white">
+                          G
+                        </span>
+                        <span className="text-[8px] bg-blue-50 text-blue-655 px-1.5 py-0.5 rounded-full font-bold uppercase">
+                          Free Tier
+                        </span>
                       </div>
                       <h3 className="text-xs font-bold uppercase text-gray-900">Gemini</h3>
-                      <p className="text-[10px] text-gray-400 mt-1 leading-normal">Google's AI. Free quota available.</p>
+                      <p className="text-[10px] text-gray-400 mt-1 leading-normal">
+                        Google's AI. Free quota available.
+                      </p>
                     </div>
-                    <div className="text-[9px] text-gray-500 italic mt-1 leading-none">Free key available</div>
+                    <div className="text-[9px] text-gray-500 italic mt-1 leading-none">
+                      Free key available
+                    </div>
                   </button>
 
                   {/* Card 4 — OpenAI */}
@@ -512,13 +602,21 @@ export default function OnboardingPage() {
                   >
                     <div>
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className="h-6 w-6 rounded-full bg-gray-900 flex items-center justify-center text-[10px] font-bold text-white">O</span>
-                        <span className="text-[8px] bg-orange-50 text-[#FF6B4A] px-1.5 py-0.5 rounded-full font-bold uppercase">Pay per use</span>
+                        <span className="h-6 w-6 rounded-full bg-gray-900 flex items-center justify-center text-[10px] font-bold text-white">
+                          O
+                        </span>
+                        <span className="text-[8px] bg-orange-50 text-[#FF6B4A] px-1.5 py-0.5 rounded-full font-bold uppercase">
+                          Pay per use
+                        </span>
                       </div>
                       <h3 className="text-xs font-bold uppercase text-gray-900">GPT-4o</h3>
-                      <p className="text-[10px] text-gray-400 mt-1 leading-normal">Most capable. ~₹0.80 per brief.</p>
+                      <p className="text-[10px] text-gray-400 mt-1 leading-normal">
+                        Most capable. ~₹0.80 per brief.
+                      </p>
                     </div>
-                    <div className="text-[9px] text-gray-500 italic mt-1 leading-none">Requires OpenAI key</div>
+                    <div className="text-[9px] text-gray-500 italic mt-1 leading-none">
+                      Requires OpenAI key
+                    </div>
                   </button>
 
                   {/* Card 5 — Custom API */}
@@ -533,13 +631,21 @@ export default function OnboardingPage() {
                   >
                     <div>
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className="h-6 w-6 rounded-full bg-gray-500 flex items-center justify-center text-xs text-white">🔧</span>
-                        <span className="text-[8px] bg-gray-50 text-gray-650 px-1.5 py-0.5 rounded-full font-bold uppercase">Any provider</span>
+                        <span className="h-6 w-6 rounded-full bg-gray-500 flex items-center justify-center text-xs text-white">
+                          🔧
+                        </span>
+                        <span className="text-[8px] bg-gray-50 text-gray-650 px-1.5 py-0.5 rounded-full font-bold uppercase">
+                          Any provider
+                        </span>
                       </div>
                       <h3 className="text-xs font-bold uppercase text-gray-900">Custom API</h3>
-                      <p className="text-[10px] text-gray-400 mt-1 leading-normal">Any OpenAI-compatible API endpoint.</p>
+                      <p className="text-[10px] text-gray-400 mt-1 leading-normal">
+                        Any OpenAI-compatible API endpoint.
+                      </p>
                     </div>
-                    <div className="text-[9px] text-gray-500 italic mt-1 leading-none">Enter custom URL & model</div>
+                    <div className="text-[9px] text-gray-500 italic mt-1 leading-none">
+                      Enter custom URL & model
+                    </div>
                   </button>
                 </div>
 
@@ -549,7 +655,9 @@ export default function OnboardingPage() {
                     <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-150">
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-gray-555">Ollama URL</label>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-gray-555">
+                            Ollama URL
+                          </label>
                           <input
                             type="text"
                             value={ollamaUrl}
@@ -558,7 +666,9 @@ export default function OnboardingPage() {
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-gray-555">Model</label>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-gray-555">
+                            Model
+                          </label>
                           <input
                             type="text"
                             value={ollamaModel}
@@ -567,8 +677,8 @@ export default function OnboardingPage() {
                           />
                         </div>
                       </div>
-                      
-                      <a 
+
+                      <a
                         href={locale === 'en' ? '/setup' : `/${locale}/setup`}
                         target="_blank"
                         className="flex items-center gap-2 text-[#FF6B4A] hover:underline text-sm mt-3"
@@ -598,11 +708,12 @@ export default function OnboardingPage() {
 
                   {provider === 'byok' && (
                     <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-150">
-                      
                       {selectedCard === 'custom' && (
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-555">Base URL</label>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-555">
+                              Base URL
+                            </label>
                             <input
                               type="text"
                               value={byokBaseUrl}
@@ -612,7 +723,9 @@ export default function OnboardingPage() {
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-555">Model Name</label>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-555">
+                              Model Name
+                            </label>
                             <input
                               type="text"
                               value={byokModel}
@@ -625,7 +738,9 @@ export default function OnboardingPage() {
                       )}
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-550">API Key</label>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-550">
+                          API Key
+                        </label>
                         <div className="relative">
                           <input
                             type={showKey ? 'text' : 'password'}
@@ -698,12 +813,13 @@ export default function OnboardingPage() {
                           {testingKey ? 'Testing...' : 'Test API'}
                         </button>
                         {testResult && (
-                          <span className={`text-[10px] font-semibold ${testResult.success ? 'text-green-650' : 'text-red-500'}`}>
+                          <span
+                            className={`text-[10px] font-semibold ${testResult.success ? 'text-green-650' : 'text-red-500'}`}
+                          >
                             {testResult.success ? '✓' : '✗'} {testResult.message}
                           </span>
                         )}
                       </div>
-
                     </div>
                   )}
                 </div>
@@ -737,12 +853,18 @@ export default function OnboardingPage() {
                   <div className="bg-orange-50/20 border border-orange-100 rounded-xl px-3.5 py-2.5 text-xs text-gray-650 flex items-center justify-between animate-fade-in shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
                     <span className="flex items-center gap-1.5 font-medium">
                       <Cpu className="h-3.5 w-3.5 text-[#FF6B4A] shrink-0" />
-                      <span>Using <strong className="text-gray-900 font-bold">{configuredProviderLabel}</strong> for briefs</span>
+                      <span>
+                        Using{' '}
+                        <strong className="text-gray-900 font-bold">
+                          {configuredProviderLabel}
+                        </strong>{' '}
+                        for briefs
+                      </span>
                     </span>
                     <button
                       onClick={() => {
-                        setSkippedStep1(false);
-                        setCurrentStep(1);
+                        setSkippedStep1(false)
+                        setCurrentStep(1)
                       }}
                       className="text-[9px] text-[#FF6B4A] font-extrabold uppercase hover:underline"
                     >
@@ -753,7 +875,7 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[290px] overflow-y-auto pr-1">
                   {NICHES.map((niche) => {
-                    const isSelected = selectedNiches.includes(niche.id);
+                    const isSelected = selectedNiches.includes(niche.id)
                     return (
                       <button
                         key={niche.id}
@@ -772,7 +894,7 @@ export default function OnboardingPage() {
                           </div>
                         )}
                       </button>
-                    );
+                    )
                   })}
                 </div>
 
@@ -806,7 +928,7 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 gap-2.5 max-h-[290px] overflow-y-auto pr-1">
                   {PLATFORMS.map((platform) => {
-                    const isSelected = selectedPlatforms.includes(platform.id);
+                    const isSelected = selectedPlatforms.includes(platform.id)
                     return (
                       <button
                         key={platform.id}
@@ -826,7 +948,7 @@ export default function OnboardingPage() {
                           )}
                         </div>
                       </button>
-                    );
+                    )
                   })}
                 </div>
 
@@ -853,12 +975,14 @@ export default function OnboardingPage() {
               <div className="w-1/4 flex-shrink-0 pr-1 pl-2 space-y-5">
                 <div className="space-y-1">
                   <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">{t('step3')}</h2>
-                  <p className="text-xs text-gray-500">Helps calibrate reach calculations and strategist hooks.</p>
+                  <p className="text-xs text-gray-500">
+                    Helps calibrate reach calculations and strategist hooks.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2.5">
                   {FOLLOWER_TIERS.map((tier) => {
-                    const isSelected = selectedFollowers === tier.id;
+                    const isSelected = selectedFollowers === tier.id
                     return (
                       <button
                         key={tier.id}
@@ -879,7 +1003,7 @@ export default function OnboardingPage() {
                           </div>
                         )}
                       </button>
-                    );
+                    )
                   })}
                 </div>
 
@@ -901,10 +1025,8 @@ export default function OnboardingPage() {
                   </button>
                 </div>
               </div>
-
             </div>
           </div>
-
         </div>
       </main>
 
@@ -925,9 +1047,9 @@ export default function OnboardingPage() {
           byokBaseUrl,
           byokModel,
           ollamaUrl,
-          ollamaModel
+          ollamaModel,
         }}
       />
     </div>
-  );
+  )
 }

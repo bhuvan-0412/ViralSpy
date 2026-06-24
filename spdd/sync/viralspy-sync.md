@@ -4,12 +4,14 @@ Update this file after every code change.
 Run in Antigravity: /spdd-sync @spdd/prompt/viralspy-reasons-canvas.md
 
 ## How to sync after each change
+
 1. Make code changes via /spdd-generate
 2. Run /spdd-sync @spdd/prompt/viralspy-reasons-canvas.md
 3. Mark completed operations below with [x]
 4. Note any divergences from the canvas
 
 ## Sprint 1 — Initial scaffold ✓
+
 - [x] Project structure matches S—Structure
 - [x] Database schema matches E—Entities
 - [x] Seed data (20 mock trends)
@@ -18,6 +20,7 @@ Run in Antigravity: /spdd-sync @spdd/prompt/viralspy-reasons-canvas.md
 - [x] GPT-4o key validated
 
 ## Sprint 2 — Platform fix + core features (current)
+
 - [x] Operation 1: Fix seed platforms (no TikTok)
 - [x] Operation 2: Fix stat cards (real Supabase counts)
 - [x] Operation 3: Remove warning banner

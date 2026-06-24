@@ -1,0 +1,14 @@
+{
+  "threshold": 10,
+  "reporters": ["console"],
+  "ignore": [
+    "node_modules/**",
+    ".next/**",
+    "package-lock.json",
+    "*.sql",
+    "training-data/**",
+    "app/api/seed/route.ts",
+    "app/api/stats/route.ts"
+  ],
+  "absolute": true
+}

@@ -18,7 +18,7 @@ assert(formattedNum === '1,50,000', 'Should format numbers in Indian format')
 const formattedCurrency = formatIndianCurrency(250000)
 console.log(`- formatIndianCurrency(250000) = "${formattedCurrency}"`)
 // Normalizing non-breaking space (or normal space) for cross-platform matching
-const cleanCurrency = formattedCurrency.replace(/\u00a0/g, ' ');
+const cleanCurrency = formattedCurrency.replace(/\u00a0/g, ' ')
 assert(cleanCurrency.includes('2,50,000'), 'Should format currency in Indian format')
 
 // Test IST date formatting

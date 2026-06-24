@@ -26,7 +26,7 @@ export async function fetchCompetitorPosts(
         title: item.snippet.title,
         views: 'Top performing',
         engagement: item.snippet.channelTitle,
-        url: `https://youtube.com/watch?v=${item.id.videoId}`
+        url: `https://youtube.com/watch?v=${item.id.videoId}`,
       }))
     }
 
@@ -40,9 +40,9 @@ export async function fetchCompetitorPosts(
         {
           headers: {
             'x-rapidapi-key': apiKey,
-            'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com'
+            'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com',
           },
-          signal: AbortSignal.timeout(5000)
+          signal: AbortSignal.timeout(5000),
         }
       )
       if (!res.ok) return []
@@ -52,7 +52,7 @@ export async function fetchCompetitorPosts(
         title: item.caption?.text?.slice(0, 80) || 'Instagram post',
         views: `${item.play_count || item.like_count || 0} interactions`,
         engagement: `${item.comment_count || 0} comments`,
-        url: `https://instagram.com/p/${item.code}`
+        url: `https://instagram.com/p/${item.code}`,
       }))
     }
 

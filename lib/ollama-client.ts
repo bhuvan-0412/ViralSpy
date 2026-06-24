@@ -35,7 +35,7 @@ export async function generateBriefWithOllama(
   const baseUrl = ollamaUrl.replace(/\/$/, '')
 
   // Call Ollama DIRECTLY from browser
-  // This works because browser is on Windows 
+  // This works because browser is on Windows
   // which can reach WSL IP directly
   const res = await fetch(`${baseUrl}/api/generate`, {
     method: 'POST',
@@ -43,14 +43,13 @@ export async function generateBriefWithOllama(
     body: JSON.stringify({
       model: model || 'llama3',
       prompt: BRIEF_PROMPT(req),
-      stream: false
-    })
+      stream: false,
+    }),
   })
 
   if (!res.ok) {
     throw new Error(
-      `Ollama error: ${res.status}. ` +
-      `Make sure ollama serve is running at ${baseUrl}`
+      `Ollama error: ${res.status}. ` + `Make sure ollama serve is running at ${baseUrl}`
     )
   }
 

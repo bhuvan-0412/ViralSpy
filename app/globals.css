@@ -5,19 +5,30 @@
 @tailwind utilities;
 
 :root {
-  --background: #F7F5F2;
-  --foreground: #1A1A1A;
+  --background: #f7f5f2;
+  --foreground: #1a1a1a;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   overflow-x: hidden;
   min-height: 100vh;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 700;
 }
 
@@ -28,37 +39,61 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #F7F5F2;
+  background: #f7f5f2;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #E5E7EB;
+  background: #e5e7eb;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #D1D5DB;
+  background: #d1d5db;
 }
 
 /* Animations */
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(16px) }
-  to { opacity: 1; transform: translateY(0) }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .animate-fade-up {
   animation: fade-up 0.4s ease-out forwards;
 }
 
 /* Staggered delay helpers */
-.delay-0 { animation-delay: 0ms; }
-.delay-75 { animation-delay: 75ms; }
-.delay-150 { animation-delay: 150ms; }
-.delay-225 { animation-delay: 225ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-375 { animation-delay: 375ms; }
-.delay-450 { animation-delay: 450ms; }
-.delay-525 { animation-delay: 525ms; }
-.delay-600 { animation-delay: 600ms; }
+.delay-0 {
+  animation-delay: 0ms;
+}
+.delay-75 {
+  animation-delay: 75ms;
+}
+.delay-150 {
+  animation-delay: 150ms;
+}
+.delay-225 {
+  animation-delay: 225ms;
+}
+.delay-300 {
+  animation-delay: 300ms;
+}
+.delay-375 {
+  animation-delay: 375ms;
+}
+.delay-450 {
+  animation-delay: 450ms;
+}
+.delay-525 {
+  animation-delay: 525ms;
+}
+.delay-600 {
+  animation-delay: 600ms;
+}
 
 @keyframes badge-pop {
   from {
@@ -66,7 +101,7 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 0;
   }
   to {
-    transform: scale(1.0);
+    transform: scale(1);
     opacity: 1;
   }
 }
@@ -85,7 +120,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, #FF6B4A 25%, #ff8c70 50%, #FF6B4A 75%);
+  background: linear-gradient(90deg, #ff6b4a 25%, #ff8c70 50%, #ff6b4a 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite linear;
 }
@@ -94,6 +129,8 @@ h1, h2, h3, h4, h5, h6 {
   cursor: none !important;
 }
 
-input, textarea, [contenteditable] {
+input,
+textarea,
+[contenteditable] {
   cursor: text !important;
 }

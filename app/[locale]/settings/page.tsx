@@ -1,28 +1,28 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
-import { useAIProvider, detectOllamaUrl } from '../../../hooks/useAIProvider';
-import { saveUserProfile } from '../../../lib/supabase';
-import Logo from '../../../components/Logo';
-import ProviderSetupGuide from '../../../components/ProviderSetupGuide';
-import { 
-  Globe, 
-  Cpu, 
-  Key, 
-  Check, 
-  AlertTriangle, 
-  ArrowLeft, 
-  Save, 
-  Terminal, 
-  Wifi, 
-  WifiOff, 
-  Eye, 
-  EyeOff, 
+import React, { useState, useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
+import { useAIProvider, detectOllamaUrl } from '../../../hooks/useAIProvider'
+import { saveUserProfile } from '../../../lib/supabase'
+import Logo from '../../../components/Logo'
+import ProviderSetupGuide from '../../../components/ProviderSetupGuide'
+import {
+  Globe,
+  Cpu,
+  Key,
+  Check,
+  AlertTriangle,
+  ArrowLeft,
+  Save,
+  Terminal,
+  Wifi,
+  WifiOff,
+  Eye,
+  EyeOff,
   Lock,
-  RefreshCw
-} from 'lucide-react';
+  RefreshCw,
+} from 'lucide-react'
 
 const presets = [
   {
@@ -32,7 +32,7 @@ const presets = [
     model: 'gpt-4o',
     badge: 'Pay per use',
     link: 'https://platform.openai.com/api-keys',
-    color: 'bg-green-500'
+    color: 'bg-green-500',
   },
   {
     id: 'gemini',
@@ -41,7 +41,7 @@ const presets = [
     model: 'gemini-2.0-flash',
     badge: 'Free Tier',
     link: 'https://aistudio.google.com/app/apikey',
-    color: 'bg-blue-500'
+    color: 'bg-blue-500',
   },
   {
     id: 'groq',
@@ -50,7 +50,7 @@ const presets = [
     model: 'llama-3.3-70b-versatile',
     badge: 'Free Tier',
     link: 'https://console.groq.com/keys',
-    color: 'bg-orange-500'
+    color: 'bg-orange-500',
   },
   {
     id: 'together',
@@ -59,7 +59,7 @@ const presets = [
     model: 'meta-llama/Llama-3-70b-chat-hf',
     badge: 'Pay per use',
     link: 'https://api.together.xyz/settings/api-keys',
-    color: 'bg-cyan-500'
+    color: 'bg-cyan-500',
   },
   {
     id: 'mistral',
@@ -68,7 +68,7 @@ const presets = [
     model: 'mistral-large-latest',
     badge: 'Pay per use',
     link: 'https://console.mistral.ai/api-keys',
-    color: 'bg-red-500'
+    color: 'bg-red-500',
   },
   {
     id: 'custom',
@@ -77,52 +77,52 @@ const presets = [
     model: '',
     badge: 'Any provider',
     link: '',
-    color: 'bg-gray-500'
-  }
-];
+    color: 'bg-gray-500',
+  },
+]
 
 const languages = [
   { code: 'en', flag: 'ENG', label: 'English', native: 'English' },
   { code: 'hi', flag: 'HIN', label: 'Hindi', native: 'हिन्दी' },
-  { code: 'te', flag: 'TEL', label: 'Telugu', native: 'తెలుగు' }
-];
+  { code: 'te', flag: 'TEL', label: 'Telugu', native: 'తెలుగు' },
+]
 
 export default function SettingsPage() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const locale = useLocale();
-  
-  const t = useTranslations('settings');
-  const tErrors = useTranslations('errors');
-  const { config: storedConfig, saveConfig } = useAIProvider();
+  const router = useRouter()
+  const pathname = usePathname()
+  const locale = useLocale()
+
+  const t = useTranslations('settings')
+  const tErrors = useTranslations('errors')
+  const { config: storedConfig, saveConfig } = useAIProvider()
 
   // Local config states
-  const [provider, setProvider] = useState<'ollama' | 'byok'>('ollama');
-  const [byokKey, setByokKey] = useState('');
-  const [byokProvider, setByokProvider] = useState<'gemini' | 'openai' | 'custom'>('openai');
-  const [byokBaseUrl, setByokBaseUrl] = useState('https://api.openai.com/v1');
-  const [byokModel, setByokModel] = useState('gpt-4o');
-  const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
-  const [ollamaModel, setOllamaModel] = useState('llama3');
-  const [selectedPreset, setSelectedPreset] = useState<string>('openai');
-  
+  const [provider, setProvider] = useState<'ollama' | 'byok'>('ollama')
+  const [byokKey, setByokKey] = useState('')
+  const [byokProvider, setByokProvider] = useState<'gemini' | 'openai' | 'custom'>('openai')
+  const [byokBaseUrl, setByokBaseUrl] = useState('https://api.openai.com/v1')
+  const [byokModel, setByokModel] = useState('gpt-4o')
+  const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434')
+  const [ollamaModel, setOllamaModel] = useState('llama3')
+  const [selectedPreset, setSelectedPreset] = useState<string>('openai')
+
   // UI States
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [detecting, setDetecting] = useState(false);
-  const [keySavedToast, setKeySavedToast] = useState(false);
-  const [settingsSavedToast, setSettingsSavedToast] = useState(false);
-  
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [detecting, setDetecting] = useState(false)
+  const [keySavedToast, setKeySavedToast] = useState(false)
+  const [settingsSavedToast, setSettingsSavedToast] = useState(false)
+
   // Setup Guide Modal states
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false)
 
   const handleModalComplete = (newConfig: any) => {
-    setProvider(newConfig.provider);
-    if (newConfig.byokKey !== undefined) setByokKey(newConfig.byokKey);
-    if (newConfig.byokProvider !== undefined) setByokProvider(newConfig.byokProvider);
-    if (newConfig.byokBaseUrl !== undefined) setByokBaseUrl(newConfig.byokBaseUrl);
-    if (newConfig.byokModel !== undefined) setByokModel(newConfig.byokModel);
-    if (newConfig.ollamaUrl !== undefined) setOllamaUrl(newConfig.ollamaUrl);
-    if (newConfig.ollamaModel !== undefined) setOllamaModel(newConfig.ollamaModel);
+    setProvider(newConfig.provider)
+    if (newConfig.byokKey !== undefined) setByokKey(newConfig.byokKey)
+    if (newConfig.byokProvider !== undefined) setByokProvider(newConfig.byokProvider)
+    if (newConfig.byokBaseUrl !== undefined) setByokBaseUrl(newConfig.byokBaseUrl)
+    if (newConfig.byokModel !== undefined) setByokModel(newConfig.byokModel)
+    if (newConfig.ollamaUrl !== undefined) setOllamaUrl(newConfig.ollamaUrl)
+    if (newConfig.ollamaModel !== undefined) setOllamaModel(newConfig.ollamaModel)
 
     // Save immediately to localStorage
     const savedConfig = {
@@ -132,109 +132,115 @@ export default function SettingsPage() {
       byokBaseUrl: newConfig.byokBaseUrl || 'https://api.openai.com/v1',
       byokModel: newConfig.byokModel || 'gpt-4o',
       ollamaUrl: newConfig.ollamaUrl || 'http://localhost:11434',
-      ollamaModel: newConfig.ollamaModel || 'llama3'
-    };
-    saveConfig(savedConfig as any);
+      ollamaModel: newConfig.ollamaModel || 'llama3',
+    }
+    saveConfig(savedConfig as any)
 
     // Sync to Supabase user profiles table
     saveUserProfile({
-      ai_provider: newConfig.provider
-    }).catch((e) => console.error('Database sync failed:', e));
+      ai_provider: newConfig.provider,
+    }).catch((e) => console.error('Database sync failed:', e))
 
-    setSettingsSavedToast(true);
-    setTimeout(() => setSettingsSavedToast(false), 3000);
-    setIsGuideOpen(false);
-  };
-  
+    setSettingsSavedToast(true)
+    setTimeout(() => setSettingsSavedToast(false), 3000)
+    setIsGuideOpen(false)
+  }
+
   // Ollama connection states
-  const [testingOllama, setTestingOllama] = useState(false);
+  const [testingOllama, setTestingOllama] = useState(false)
   const [ollamaStatus, setOllamaStatus] = useState<{
-    tested: boolean;
-    connected: boolean;
-    message: string;
-  } | null>(null);
+    tested: boolean
+    connected: boolean
+    message: string
+  } | null>(null)
 
   // BYOK connection states
-  const [testingByok, setTestingByok] = useState(false);
+  const [testingByok, setTestingByok] = useState(false)
   const [byokStatus, setByokStatus] = useState<{
-    tested: boolean;
-    success: boolean;
-    message: string;
-  } | null>(null);
+    tested: boolean
+    success: boolean
+    message: string
+  } | null>(null)
 
   // Load configuration from custom hook on mount
   useEffect(() => {
     if (storedConfig) {
-      setProvider(storedConfig.provider || 'ollama');
-      setByokProvider(storedConfig.byokProvider || 'openai');
-      setByokKey(storedConfig.byokKey || '');
-      const baseUrl = storedConfig.byokBaseUrl || 'https://api.openai.com/v1';
-      const model = storedConfig.byokModel || 'gpt-4o';
-      setByokBaseUrl(baseUrl);
-      setByokModel(model);
-      setOllamaUrl(storedConfig.ollamaUrl || 'http://localhost:11434');
-      setOllamaModel(storedConfig.ollamaModel || 'llama3');
+      setProvider(storedConfig.provider || 'ollama')
+      setByokProvider(storedConfig.byokProvider || 'openai')
+      setByokKey(storedConfig.byokKey || '')
+      const baseUrl = storedConfig.byokBaseUrl || 'https://api.openai.com/v1'
+      const model = storedConfig.byokModel || 'gpt-4o'
+      setByokBaseUrl(baseUrl)
+      setByokModel(model)
+      setOllamaUrl(storedConfig.ollamaUrl || 'http://localhost:11434')
+      setOllamaModel(storedConfig.ollamaModel || 'llama3')
 
       // Auto-select active preset based on current stored credentials
-      const matched = presets.find(p => p.baseUrl === baseUrl && p.model === model && (p.id === 'gemini' ? storedConfig.byokProvider === 'gemini' : storedConfig.byokProvider === 'openai'));
+      const matched = presets.find(
+        (p) =>
+          p.baseUrl === baseUrl &&
+          p.model === model &&
+          (p.id === 'gemini'
+            ? storedConfig.byokProvider === 'gemini'
+            : storedConfig.byokProvider === 'openai')
+      )
       if (matched) {
-        setSelectedPreset(matched.id);
+        setSelectedPreset(matched.id)
       } else if (storedConfig.byokProvider === 'gemini') {
-        setSelectedPreset('gemini');
+        setSelectedPreset('gemini')
       } else {
-        setSelectedPreset('custom');
+        setSelectedPreset('custom')
       }
     }
-  }, [storedConfig]);
+  }, [storedConfig])
 
   const switchLocale = (newLocale: string) => {
-    const newPath = pathname.replace(`/${locale}`, '') || '/';
-    router.push(`/${newLocale}${newPath}`);
-  };
+    const newPath = pathname.replace(`/${locale}`, '') || '/'
+    router.push(`/${newLocale}${newPath}`)
+  }
 
   const handleTestOllama = async () => {
     setTestingOllama(true)
     setOllamaStatus(null)
-    
+
     // Clean URL
     const cleanUrl = ollamaUrl.replace(/\/$/, '')
-    
+
     try {
       // Try direct fetch from browser (client-side)
-      // This works because the browser is on Windows 
+      // This works because the browser is on Windows
       // which can reach WSL IP directly
       const res = await fetch(`${cleanUrl}/api/tags`, {
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(5000),
       })
-      
+
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      
+
       const data = await res.json()
       const models = data.models?.map((m: any) => m.name) || []
-      const hasModel = models.some((m: string) => 
-        m.startsWith(ollamaModel.split(':')[0]))
-      
+      const hasModel = models.some((m: string) => m.startsWith(ollamaModel.split(':')[0]))
+
       setOllamaStatus({
         tested: true,
         connected: true,
-        message: hasModel 
+        message: hasModel
           ? `Connected — ${ollamaModel} ready ✓`
-          : `Connected but ${ollamaModel} not pulled yet`
+          : `Connected but ${ollamaModel} not pulled yet`,
       })
     } catch (e: any) {
       setOllamaStatus({
         tested: true,
         connected: false,
-        message: 'Cannot reach Ollama. Check URL and make sure ollama serve is running.'
+        message: 'Cannot reach Ollama. Check URL and make sure ollama serve is running.',
       })
     } finally {
       setTestingOllama(false)
     }
-  };
+  }
 
   const handleTestByok = async () => {
-    setTestingByok(true);
-    setByokStatus(null);
+    setTestingByok(true)
+    setByokStatus(null)
     try {
       const res = await fetch('/api/test-key', {
         method: 'POST',
@@ -243,25 +249,25 @@ export default function SettingsPage() {
           key: byokKey,
           provider: byokProvider,
           baseUrl: byokBaseUrl,
-          model: byokModel
-        })
-      });
-      const data = await res.json();
+          model: byokModel,
+        }),
+      })
+      const data = await res.json()
       setByokStatus({
         tested: true,
         success: data.valid,
-        message: data.message
-      });
+        message: data.message,
+      })
     } catch (e: any) {
       setByokStatus({
         tested: true,
         success: false,
-        message: e.message || 'Verification failed.'
-      });
+        message: e.message || 'Verification failed.',
+      })
     } finally {
-      setTestingByok(false);
+      setTestingByok(false)
     }
-  };
+  }
 
   const handleSaveKey = async () => {
     const newConfig = {
@@ -272,19 +278,19 @@ export default function SettingsPage() {
       byokBaseUrl,
       byokModel,
       ollamaUrl,
-      ollamaModel
-    };
-    saveConfig(newConfig as any);
+      ollamaModel,
+    }
+    saveConfig(newConfig as any)
     try {
       await saveUserProfile({
-        ai_provider: provider
-      });
+        ai_provider: provider,
+      })
     } catch (e) {
-      console.error('Database sync failed:', e);
+      console.error('Database sync failed:', e)
     }
-    setKeySavedToast(true);
-    setTimeout(() => setKeySavedToast(false), 3000);
-  };
+    setKeySavedToast(true)
+    setTimeout(() => setKeySavedToast(false), 3000)
+  }
 
   const handleSaveSettings = async () => {
     const newConfig = {
@@ -294,39 +300,39 @@ export default function SettingsPage() {
       byokBaseUrl,
       byokModel,
       ollamaUrl,
-      ollamaModel
-    };
-    saveConfig(newConfig as any);
+      ollamaModel,
+    }
+    saveConfig(newConfig as any)
     try {
       await saveUserProfile({
-        ai_provider: provider
-      });
+        ai_provider: provider,
+      })
     } catch (e) {
-      console.error('Database sync failed:', e);
+      console.error('Database sync failed:', e)
     }
-    setSettingsSavedToast(true);
-    setTimeout(() => setSettingsSavedToast(false), 3000);
-  };
+    setSettingsSavedToast(true)
+    setTimeout(() => setSettingsSavedToast(false), 3000)
+  }
 
-  const handleSelectPreset = (preset: typeof presets[number]) => {
+  const handleSelectPreset = (preset: (typeof presets)[number]) => {
     if (preset.id === 'gemini') {
-      setByokProvider('gemini');
+      setByokProvider('gemini')
     } else if (preset.id === 'custom') {
-      setByokProvider('custom');
+      setByokProvider('custom')
     } else {
-      setByokProvider('openai');
+      setByokProvider('openai')
     }
-    setByokBaseUrl(preset.baseUrl);
-    setByokModel(preset.model);
-  };
+    setByokBaseUrl(preset.baseUrl)
+    setByokModel(preset.model)
+  }
 
   const getLocalizedDashboardPath = () => {
-    return locale === 'en' ? '/dashboard' : `/${locale}/dashboard`;
-  };
+    return locale === 'en' ? '/dashboard' : `/${locale}/dashboard`
+  }
 
   const getLocalizedSetupPath = () => {
-    return locale === 'en' ? '/setup' : `/${locale}/setup`;
-  };
+    return locale === 'en' ? '/setup' : `/${locale}/setup`
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F5F2] text-[#1A1A1A] flex flex-col justify-between font-sans relative">
@@ -349,19 +355,23 @@ export default function SettingsPage() {
         {/* Top Header */}
         <div className="space-y-1">
           <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">{t('title')}</h1>
-          <p className="text-xs text-gray-500 font-medium">Configure translation preferences and model generation providers.</p>
+          <p className="text-xs text-gray-500 font-medium">
+            Configure translation preferences and model generation providers.
+          </p>
         </div>
 
         {/* SECTION 1: Language */}
         <section className="bg-white border border-gray-200 rounded-2xl p-6 shadow-card space-y-4">
           <div className="flex items-center space-x-2 border-b border-gray-100 pb-3">
             <Globe className="h-4 w-4 text-[#FF6B4A]" />
-            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800">{t('language')}</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800">
+              {t('language')}
+            </h2>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {languages.map((lang) => {
-              const isSelected = locale === lang.code;
+              const isSelected = locale === lang.code
               return (
                 <button
                   key={lang.code}
@@ -372,27 +382,40 @@ export default function SettingsPage() {
                       : 'border-gray-200 hover:border-gray-300 bg-white text-gray-600'
                   }`}
                 >
-                  <span className={`text-2xl font-black mb-2 tracking-tight ${isSelected ? 'text-[#FF6B4A]' : 'text-gray-400'}`}>{lang.flag}</span>
-                  <span className="text-xs font-bold leading-tight uppercase tracking-wider">{lang.native}</span>
-                  <span className="text-[10px] text-gray-400 mt-1 uppercase font-semibold">{lang.label}</span>
+                  <span
+                    className={`text-2xl font-black mb-2 tracking-tight ${isSelected ? 'text-[#FF6B4A]' : 'text-gray-400'}`}
+                  >
+                    {lang.flag}
+                  </span>
+                  <span className="text-xs font-bold leading-tight uppercase tracking-wider">
+                    {lang.native}
+                  </span>
+                  <span className="text-[10px] text-gray-400 mt-1 uppercase font-semibold">
+                    {lang.label}
+                  </span>
                   {isSelected && (
                     <div className="absolute top-2 right-2 bg-[#FF6B4A] p-0.5 rounded-full text-white">
                       <Check className="h-3 w-3" />
                     </div>
                   )}
                 </button>
-              );
+              )
             })}
           </div>
         </section>
 
         {/* SECTION 2: AI Provider */}
-        <section id="ai-provider" className="bg-white border border-gray-200 rounded-2xl p-6 shadow-card space-y-6">
+        <section
+          id="ai-provider"
+          className="bg-white border border-gray-200 rounded-2xl p-6 shadow-card space-y-6"
+        >
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center space-x-2">
               <Cpu className="h-4 w-4 text-[#FF6B4A]" />
               <div className="space-y-0.5">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800">{t('aiProvider')}</h2>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800">
+                  {t('aiProvider')}
+                </h2>
                 <p className="text-[11px] text-gray-400 font-medium">{t('aiProviderDesc')}</p>
               </div>
             </div>
@@ -406,7 +429,6 @@ export default function SettingsPage() {
 
           {/* Provider 2-Card Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
             {/* CARD 1: Ollama */}
             <button
               onClick={() => setProvider('ollama')}
@@ -424,7 +446,9 @@ export default function SettingsPage() {
                   <span className="text-[9px] font-semibold text-purple-550">100% Private</span>
                 </div>
                 <h3 className="text-sm font-bold text-gray-900 uppercase">{t('ollamaTitle')}</h3>
-                <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">No API costs. Briefs are generated completely on your machine.</p>
+                <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
+                  No API costs. Briefs are generated completely on your machine.
+                </p>
               </div>
               {provider === 'ollama' && (
                 <span className="absolute bottom-4 right-4 bg-[#FF6B4A] text-white p-0.5 rounded-full">
@@ -450,7 +474,9 @@ export default function SettingsPage() {
                   <span className="text-[9px] font-semibold text-gray-400">Custom Key</span>
                 </div>
                 <h3 className="text-sm font-bold text-gray-900 uppercase">{t('byokTitle')}</h3>
-                <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">Provide your own API keys. Keys are stored locally on your device.</p>
+                <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
+                  Provide your own API keys. Keys are stored locally on your device.
+                </p>
               </div>
               {provider === 'byok' && (
                 <span className="absolute bottom-4 right-4 bg-[#FF6B4A] text-white p-0.5 rounded-full">
@@ -458,17 +484,20 @@ export default function SettingsPage() {
                 </span>
               )}
             </button>
-
           </div>
 
           {/* OLLAMA LOCAL CONFIGURATION PANEL */}
           {provider === 'ollama' && (
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4 animate-fade-in">
-              <h3 className="text-xs font-bold text-gray-750 uppercase tracking-wider">{t('ollamaTitle')} Configuration</h3>
-              
+              <h3 className="text-xs font-bold text-gray-750 uppercase tracking-wider">
+                {t('ollamaTitle')} Configuration
+              </h3>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{t('ollamaUrl')}</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    {t('ollamaUrl')}
+                  </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -492,7 +521,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{t('ollamaModel')}</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    {t('ollamaModel')}
+                  </label>
                   <select
                     value={ollamaModel}
                     onChange={(e) => setOllamaModel(e.target.value)}
@@ -518,13 +549,17 @@ export default function SettingsPage() {
                 </button>
 
                 {ollamaStatus && (
-                  <div className={`flex items-center space-x-2 text-xs font-semibold ${
-                    ollamaStatus.connected ? 'text-green-650' : 'text-red-500'
-                  }`}>
+                  <div
+                    className={`flex items-center space-x-2 text-xs font-semibold ${
+                      ollamaStatus.connected ? 'text-green-650' : 'text-red-500'
+                    }`}
+                  >
                     {ollamaStatus.connected ? (
                       <>
                         <Wifi className="h-4 w-4" />
-                        <span>● {t('ollamaConnected')} — {ollamaStatus.message}</span>
+                        <span>
+                          ● {t('ollamaConnected')} — {ollamaStatus.message}
+                        </span>
                       </>
                     ) : (
                       <>
@@ -540,11 +575,34 @@ export default function SettingsPage() {
               <div className="text-[11px] text-gray-550 bg-white border border-gray-200 rounded-xl p-3.5 space-y-1">
                 <div className="font-bold text-gray-700">How to use Local Ollama:</div>
                 <ol className="list-decimal pl-4 space-y-0.5">
-                  <li>Download Ollama from <a href="https://ollama.com" target="_blank" rel="noopener noreferrer" className="text-[#FF6B4A] font-semibold underline">ollama.com</a>.</li>
-                  <li>Run the service in your terminal: <code className="bg-gray-100 text-red-500 px-1.5 py-0.5 rounded font-mono text-[10px]">ollama serve</code>.</li>
-                  <li>Pull the model to generate briefs: <code className="bg-gray-100 text-red-500 px-1.5 py-0.5 rounded font-mono text-[10px]">ollama pull llama3</code>.</li>
+                  <li>
+                    Download Ollama from{' '}
+                    <a
+                      href="https://ollama.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#FF6B4A] font-semibold underline"
+                    >
+                      ollama.com
+                    </a>
+                    .
+                  </li>
+                  <li>
+                    Run the service in your terminal:{' '}
+                    <code className="bg-gray-100 text-red-500 px-1.5 py-0.5 rounded font-mono text-[10px]">
+                      ollama serve
+                    </code>
+                    .
+                  </li>
+                  <li>
+                    Pull the model to generate briefs:{' '}
+                    <code className="bg-gray-100 text-red-500 px-1.5 py-0.5 rounded font-mono text-[10px]">
+                      ollama pull llama3
+                    </code>
+                    .
+                  </li>
                 </ol>
-                <a 
+                <a
                   href={getLocalizedSetupPath()}
                   className="flex items-center gap-2 text-[#FF6B4A] hover:underline text-sm font-medium mt-2 pt-1 border-t border-gray-100"
                 >
@@ -558,7 +616,9 @@ export default function SettingsPage() {
           {provider === 'byok' && (
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4 animate-fade-in">
               <div className="flex justify-between items-center">
-                <h3 className="text-xs font-bold text-gray-750 uppercase tracking-wider">{t('byokTitle')} Credentials</h3>
+                <h3 className="text-xs font-bold text-gray-750 uppercase tracking-wider">
+                  {t('byokTitle')} Credentials
+                </h3>
                 <span className="text-[10px] text-gray-400 flex items-center space-x-1">
                   <Lock className="h-3 w-3" />
                   <span>Stored locally</span>
@@ -566,20 +626,21 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-4">
-                
                 {/* Presets Horizontal Scroll */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Select Provider</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    Select Provider
+                  </label>
                   <div className="flex space-x-2.5 overflow-x-auto pb-2 pt-1 scrollbar-thin">
                     {presets.map((p) => {
-                      const isSelected = selectedPreset === p.id;
+                      const isSelected = selectedPreset === p.id
                       return (
                         <button
                           key={p.id}
                           type="button"
                           onClick={() => {
-                            setSelectedPreset(p.id);
-                            handleSelectPreset(p);
+                            setSelectedPreset(p.id)
+                            handleSelectPreset(p)
                           }}
                           className={`min-w-[130px] p-3 rounded-xl border text-left flex flex-col justify-between h-24 relative transition-all shrink-0 ${
                             isSelected
@@ -589,29 +650,33 @@ export default function SettingsPage() {
                         >
                           <div className="flex items-center space-x-1.5">
                             <span className={`h-2.5 w-2.5 rounded-full ${p.color}`} />
-                            <span className="font-bold text-gray-800 text-[11px] leading-tight block">{p.name}</span>
+                            <span className="font-bold text-gray-800 text-[11px] leading-tight block">
+                              {p.name}
+                            </span>
                           </div>
                           <div>
-                            <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-extrabold uppercase ${
-                              p.badge === 'Free Tier' 
-                                ? 'bg-green-100 text-green-700' 
-                                : p.badge === 'Pay per use'
-                                  ? 'bg-blue-50 text-blue-600'
-                                  : 'bg-gray-100 text-gray-600'
-                            }`}>
+                            <span
+                              className={`text-[8px] px-1.5 py-0.5 rounded-full font-extrabold uppercase ${
+                                p.badge === 'Free Tier'
+                                  ? 'bg-green-100 text-green-700'
+                                  : p.badge === 'Pay per use'
+                                    ? 'bg-blue-50 text-blue-600'
+                                    : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
                               {p.badge}
                             </span>
                           </div>
                         </button>
-                      );
+                      )
                     })}
                   </div>
                 </div>
 
                 {/* API Link if present */}
-                {presets.find(p => p.id === selectedPreset)?.link && (
+                {presets.find((p) => p.id === selectedPreset)?.link && (
                   <a
-                    href={presets.find(p => p.id === selectedPreset)?.link}
+                    href={presets.find((p) => p.id === selectedPreset)?.link}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-[#FF6B4A] hover:underline font-bold inline-flex items-center gap-1"
@@ -622,7 +687,9 @@ export default function SettingsPage() {
 
                 {/* API Key input */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">API Key</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    API Key
+                  </label>
                   <div className="relative">
                     <input
                       type={showApiKey ? 'text' : 'password'}
@@ -644,7 +711,9 @@ export default function SettingsPage() {
                 {/* Base URL input (shown only for Custom) */}
                 {selectedPreset === 'custom' && (
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Base URL</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      Base URL
+                    </label>
                     <input
                       type="text"
                       value={byokBaseUrl}
@@ -657,15 +726,17 @@ export default function SettingsPage() {
 
                 {/* Model input */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Model Name</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    Model Name
+                  </label>
                   <input
                     type="text"
                     value={byokModel}
                     onChange={(e) => setByokModel(e.target.value)}
                     disabled={selectedPreset !== 'custom'}
                     className={`w-full text-xs font-semibold px-3 py-2.5 rounded-xl border focus:outline-none focus:border-[#FF6B4A] ${
-                      selectedPreset !== 'custom' 
-                        ? 'bg-gray-50 text-gray-500 cursor-not-allowed border-gray-200' 
+                      selectedPreset !== 'custom'
+                        ? 'bg-gray-50 text-gray-500 cursor-not-allowed border-gray-200'
                         : 'bg-white border-gray-200'
                     }`}
                     placeholder={selectedPreset === 'custom' ? 'e.g., meta-llama/Llama-3' : ''}
@@ -682,7 +753,7 @@ export default function SettingsPage() {
                     <Save className="h-3.5 w-3.5" />
                     <span>{t('byokSave')}</span>
                   </button>
-                  
+
                   <button
                     onClick={handleTestByok}
                     disabled={testingByok || !byokKey}
@@ -692,7 +763,7 @@ export default function SettingsPage() {
                     <span>{testingByok ? 'Testing...' : 'Test API'}</span>
                   </button>
                 </div>
-                
+
                 <div className="flex flex-col">
                   {keySavedToast && (
                     <div className="text-xs font-semibold text-green-650 flex items-center space-x-1.5">
@@ -701,10 +772,16 @@ export default function SettingsPage() {
                     </div>
                   )}
                   {byokStatus && (
-                    <div className={`text-xs font-semibold flex items-center space-x-1.5 ${
-                      byokStatus.success ? 'text-green-650' : 'text-red-500'
-                    }`}>
-                      {byokStatus.success ? <Check className="h-4 w-4 text-green-500" /> : <AlertTriangle className="h-4 w-4 text-red-500" />}
+                    <div
+                      className={`text-xs font-semibold flex items-center space-x-1.5 ${
+                        byokStatus.success ? 'text-green-650' : 'text-red-500'
+                      }`}
+                    >
+                      {byokStatus.success ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-red-500" />
+                      )}
                       <span>{byokStatus.message}</span>
                     </div>
                   )}
@@ -716,7 +793,6 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
-
         </section>
 
         {/* SECTION 3: Save button */}
@@ -739,7 +815,6 @@ export default function SettingsPage() {
             </button>
           </div>
         </section>
-
       </main>
 
       <footer className="max-w-3xl mx-auto w-full py-6 border-t border-gray-200 flex justify-between items-center text-xs text-gray-550 mt-12 px-4">
@@ -758,9 +833,9 @@ export default function SettingsPage() {
           byokBaseUrl,
           byokModel,
           ollamaUrl,
-          ollamaModel
+          ollamaModel,
         }}
       />
     </div>
-  );
+  )
 }

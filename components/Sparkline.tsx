@@ -1,25 +1,25 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState } from 'react';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import React, { useEffect, useState } from 'react'
+import { LineChart, Line, ResponsiveContainer } from 'recharts'
 
 interface SparklineProps {
-  data: number[];
-  stroke?: string;
+  data: number[]
+  stroke?: string
 }
 
 export default function Sparkline({ data, stroke = '#FF6B4A' }: SparklineProps) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
   if (!mounted || !data || data.length === 0) {
-    return <div className="h-full w-full bg-gray-150/20" />;
+    return <div className="h-full w-full bg-gray-150/20" />
   }
 
-  const chartData = data.map((val, i) => ({ value: val, index: i }));
+  const chartData = data.map((val, i) => ({ value: val, index: i }))
 
   return (
     <div className="w-full h-full">
@@ -38,5 +38,5 @@ export default function Sparkline({ data, stroke = '#FF6B4A' }: SparklineProps) 
         </LineChart>
       </ResponsiveContainer>
     </div>
-  );
+  )
 }
