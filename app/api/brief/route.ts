@@ -170,6 +170,256 @@ export async function GET(request: Request) {
 }
 
 export async function POST(req: Request) {
+  console.log('Brief API called:', {
+    isVercel: process.env.VERCEL,
+    hasGeminiKey: !!process.env.GEMINI_API_KEY,
+    hasServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+  })
+
+  const body = await req.json()
+  req.json = async () => body
+  const rawTrend = body.trend || body
+  const trend = {
+    name: rawTrend.name || rawTrend.trendName || '',
+    niche: rawTrend.niche || '',
+    platform: rawTrend.platform || '',
+    velocity_score: rawTrend.velocity_score || rawTrend.velocityScore || 0,
+    momentum_status: rawTrend.momentum_status || rawTrend.momentumStatus || '',
+    id: rawTrend.id || rawTrend.trendId || '',
+  }
+
+  {
+    const isVercel = process.env.VERCEL === '1'
+    if (isVercel) {
+      const apiKey = process.env.GEMINI_API_KEY
+      if (!apiKey) {
+        return Response.json(
+          {
+            error: 'Gemini API key not configured on server.',
+            details: 'Add GEMINI_API_KEY to Vercel environment variables.',
+          },
+          { status: 500 }
+        )
+      }
+
+      try {
+        validateEnv()
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+        const serviceRoleKey = supabaseServiceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+
+        const supabase =
+          supabaseUrl && serviceRoleKey
+            ? createClient(supabaseUrl, serviceRoleKey, {
+                auth: {
+                  persistSession: false,
+                  autoRefreshToken: false,
+                },
+              })
+            : null
+
+        const trendId = trend.id
+        const userId = body.userId
+        const forceRegenerate = body.forceRegenerate
+
+        const isRealTrend = supabase && trendId && !trendId.startsWith('demo-')
+
+        if (isRealTrend) {
+          if (forceRegenerate) {
+            await supabase!.from('briefs').delete().eq('trend_id', trendId)
+          } else {
+            const { data: cached } = await supabase!
+              .from('briefs')
+              .select('*')
+              .eq('trend_id', trendId)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            if (cached) {
+              const formatted = {
+                ...cached,
+                angles:
+                  typeof cached.angles === 'string'
+                    ? JSON.parse(cached.angles)
+                    : cached.angles || [],
+                hashtags:
+                  typeof cached.hashtags === 'string'
+                    ? JSON.parse(cached.hashtags)
+                    : cached.hashtags || [],
+              }
+              return Response.json({ success: true, data: formatted })
+            }
+          }
+        }
+
+        let trendName = trend.name
+        let niche = trend.niche
+        let platform = trend.platform
+        let velocityScore = Number(trend.velocity_score)
+        let momentumStatus = trend.momentum_status
+        let dbTrendId = trendId
+
+        if (isRealTrend && !trendName) {
+          const { data: trendData } = await supabase!
+            .from('trends')
+            .select('*')
+            .eq('id', trendId)
+            .maybeSingle()
+
+          if (!trendData) {
+            return Response.json({ success: false, error: 'Trend not found' }, { status: 404 })
+          }
+          trendName = trendData.name
+          niche = trendData.niche
+          platform = trendData.platform
+          velocityScore = Number(trendData.velocity_score)
+          momentumStatus = trendData.momentum_status
+          dbTrendId = trendData.id
+        }
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: 'user',
+                  parts: [
+                    {
+                      text: `You are a viral content strategist who has helped 500+ creators hit 1M+ views. Given a trending topic generate a highly specific actionable content brief. Do NOT be generic. Every suggestion must be tailored to the exact trend.
+Respond ONLY with valid JSON, no markdown, no preamble:
+{
+  "hook": "under-8-word killer opening line",
+  "angles": [
+    {"title": "ANGLE NAME", "description": "2-sentence specific description"},
+    {"title": "ANGLE NAME", "description": "2-sentence specific description"},
+    {"title": "ANGLE NAME", "description": "2-sentence specific description"}
+  ],
+  "format": "TALKING_HEAD or POV or DUET or TUTORIAL or STORYTIME or TRANSITION",
+  "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"],
+  "best_post_time": "e.g. 6-8 PM weekdays",
+  "estimated_reach": "e.g. 80K-300K views for a 10K-follower account",
+  "script_outline": "Act 1 (0-3s): hook. Act 2 (3-20s): build. Act 3 (20-30s): CTA"
+}
+
+Trend: ${trend.name}
+Niche: ${trend.niche}
+Platform: ${trend.platform}
+Velocity score: ${trend.velocity_score}
+Momentum: ${trend.momentum_status}
+Generate a content brief for this exact trend.`,
+                    },
+                  ],
+                },
+              ],
+              generationConfig: {
+                responseMimeType: 'application/json',
+                temperature: 0.8,
+                maxOutputTokens: 1000,
+              },
+            }),
+          }
+        )
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(`Gemini API returned status ${response.status}: ${errorText}`)
+        }
+
+        const data = await response.json()
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        if (!text) {
+          throw new Error('Empty response from Gemini API')
+        }
+
+        const strategistBrief = JSON.parse(text)
+
+        const briefData = {
+          trend_id: dbTrendId || '00000000-0000-0000-0000-000000000000',
+          user_id: userId || '00000000-0000-0000-0000-000000000000',
+          hook: strategistBrief.hook,
+          angles: strategistBrief.angles,
+          format: strategistBrief.format,
+          hashtags: strategistBrief.hashtags,
+          best_post_time: strategistBrief.best_post_time,
+          estimated_reach: strategistBrief.estimated_reach,
+          script_outline: strategistBrief.script_outline,
+          created_at: new Date().toISOString(),
+        }
+
+        if (!supabase || !dbTrendId || dbTrendId.startsWith('demo-')) {
+          return Response.json({
+            success: true,
+            data: {
+              id: `demo-brief-uuid-${Date.now()}`,
+              ...briefData,
+            },
+          })
+        }
+
+        const { data: inserted, error: insertError } = await supabase
+          .from('briefs')
+          .insert({
+            trend_id: briefData.trend_id,
+            user_id: userId && !userId.startsWith('demo-') ? userId : null,
+            hook: briefData.hook,
+            angles:
+              typeof briefData.angles === 'string'
+                ? briefData.angles
+                : JSON.stringify(briefData.angles),
+            format: briefData.format,
+            hashtags:
+              typeof briefData.hashtags === 'string'
+                ? briefData.hashtags
+                : JSON.stringify(briefData.hashtags),
+            best_post_time: briefData.best_post_time,
+            estimated_reach: briefData.estimated_reach,
+            script_outline: briefData.script_outline,
+            model_used: 'gemini-2.5-flash',
+            prompt_version: 2,
+          })
+          .select()
+          .single()
+
+        if (insertError) throw insertError
+
+        if (inserted) {
+          const formatted = {
+            ...inserted,
+            angles:
+              typeof inserted.angles === 'string'
+                ? JSON.parse(inserted.angles)
+                : inserted.angles || [],
+            hashtags:
+              typeof inserted.hashtags === 'string'
+                ? JSON.parse(inserted.hashtags)
+                : inserted.hashtags || [],
+          }
+          return Response.json({ success: true, data: formatted })
+        }
+
+        return Response.json(
+          { success: false, error: 'Failed to return inserted brief.' },
+          { status: 500 }
+        )
+      } catch (e: any) {
+        console.error('Gemini Brief error:', e)
+        return Response.json(
+          {
+            error: e.message,
+            stack: e.stack?.split('\n').slice(0, 3).join(' | '),
+          },
+          { status: 500 }
+        )
+      }
+    }
+  }
+
   // On Vercel, Ollama is unavailable — force OpenAI
   const isVercel = process.env.VERCEL === '1'
   const provider = isVercel ? 'openai' : req.headers.get('x-ai-provider') || 'openai'
