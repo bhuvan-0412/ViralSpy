@@ -1,6 +1,7 @@
 stages:
-  - install
-  - lint
+  - validate
+  - quality
+  - security
   - test
   - build
 
@@ -8,76 +9,162 @@ stages:
 variables:
   npm_config_cache: '$CI_PROJECT_DIR/.npm'
   NEXT_TELEMETRY_DISABLED: '1'
+  HUSKY: '0'
 
 # Default container image
 default:
-  image: node:20
+  image: node:22
 
-# 1. Dependency Installation Stage
-install_dependencies:
-  stage: install
+# Cache configuration template
+.npm_cache: &npm_cache
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - .npm/
+    - node_modules/
+
+# 1. Validation Stage
+validate_environment:
+  stage: validate
   script:
     - npm ci --prefer-offline --no-audit
+    - npm run validate:env
+    - npm run validate:lockfile
+    - npm run validate:large-files
   cache:
-    key:
-      files:
-        - package-lock.json
-    paths:
-      - .npm/
-      - node_modules/
+    <<: *npm_cache
     policy: pull-push
   rules:
     - if: $CI_COMMIT_BRANCH
 
-# 2. Linting Stage
-linting:
-  stage: lint
+# 2. Quality Stage
+quality:prettier:
+  stage: quality
+  needs: [validate_environment]
   script:
-    - npm run lint
     - npm run format:check
-    - npm run check:circular
-    - npm run check:duplicate
-    - npm run check:deadcode
-    - npm run check:licenses
   cache:
-    key:
-      files:
-        - package-lock.json
-    paths:
-      - .npm/
-      - node_modules/
+    <<: *npm_cache
     policy: pull
   rules:
     - if: $CI_COMMIT_BRANCH
 
-# 3. Testing Stage
+quality:eslint:
+  stage: quality
+  needs: [validate_environment]
+  script:
+    - npm run lint
+  cache:
+    <<: *npm_cache
+    policy: pull
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+quality:typescript:
+  stage: quality
+  needs: [validate_environment]
+  script:
+    - npm run check:types
+  cache:
+    <<: *npm_cache
+    policy: pull
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+quality:circular:
+  stage: quality
+  needs: [validate_environment]
+  script:
+    - npm run check:circular
+  cache:
+    <<: *npm_cache
+    policy: pull
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+quality:duplicate:
+  stage: quality
+  needs: [validate_environment]
+  script:
+    - npm run check:duplicate
+  cache:
+    <<: *npm_cache
+    policy: pull
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+quality:deadcode:
+  stage: quality
+  needs: [validate_environment]
+  script:
+    - npm run check:deadcode
+  cache:
+    <<: *npm_cache
+    policy: pull
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+quality:licenses:
+  stage: quality
+  needs: [validate_environment]
+  script:
+    - npm run check:licenses
+  cache:
+    <<: *npm_cache
+    policy: pull
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+quality:secrets:
+  stage: quality
+  needs: [validate_environment]
+  script:
+    - npm run check:secrets
+  cache:
+    <<: *npm_cache
+    policy: pull
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+# 3. Security Stage
+security:audit:
+  stage: security
+  needs: [validate_environment]
+  script:
+    - npm audit --audit-level=high --json > npm-audit-report.json || true
+    - npm audit --audit-level=high
+  cache:
+    <<: *npm_cache
+    policy: pull
+  artifacts:
+    name: 'viralspy-security-audit-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA'
+    paths:
+      - npm-audit-report.json
+    expire_in: 7 days
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+# 4. Testing Stage
 testing:
   stage: test
+  needs: [validate_environment]
   script:
     - npm run test
   cache:
-    key:
-      files:
-        - package-lock.json
-    paths:
-      - .npm/
-      - node_modules/
+    <<: *npm_cache
     policy: pull
   rules:
     - if: $CI_COMMIT_BRANCH
 
-# 4. Build Validation Stage
+# 5. Build Validation Stage
 build_validation:
   stage: build
+  needs: [validate_environment]
   script:
     - npm run build
   cache:
-    - key:
-        files:
-          - package-lock.json
-      paths:
-        - .npm/
-        - node_modules/
+    - <<: *npm_cache
       policy: pull
     - key: next-cache-$CI_COMMIT_REF_SLUG
       paths:

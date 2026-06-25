@@ -23,7 +23,7 @@
     "validate:env": "node scripts/validate-env.js",
     "validate:lockfile": "node scripts/validate-lockfile.js",
     "validate:large-files": "node scripts/validate-large-files.js",
-    "check:all": "npm run format:check && npm run lint && npm run check:types && npm run check:circular && npm run check:duplicate && npm run check:deadcode && npm run check:licenses"
+    "check:all": "npm run format:check && npm run lint && npm run check:types && npm run check:circular && npm run check:duplicate && npm run check:deadcode && npm run check:licenses && npm run check:secrets"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
