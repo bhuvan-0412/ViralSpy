@@ -1,24 +1,37 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const getSupabase = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) {
+    return null
+  }
+  return createClient(url, key)
+}
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+const getResend = () => {
+  return process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+}
 
 export async function POST(req: Request) {
   const body = await req.json()
 
-  // 1. Save feedback to Supabase
-  const { data, error } = await supabase.from('feedback').insert([body])
+  const supabase = getSupabase()
+  let data = null
 
-  if (error) {
-    return Response.json({ error: error.message }, { status: 500 })
+  if (supabase) {
+    const { data: insertData, error } = await supabase.from('feedback').insert([body])
+    if (error) {
+      return Response.json({ error: error.message }, { status: 500 })
+    }
+    data = insertData
+  } else {
+    console.warn('[feedback] Supabase client not initialized, skipped database save.')
   }
 
   // 2. Send email notification — wrapped so a failure never blocks the user
+  const resend = getResend()
   if (resend) {
     try {
       await resend.emails.send({
