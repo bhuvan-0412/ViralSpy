@@ -46,3 +46,6 @@ next-env.d.ts
 # local dev / scratch files — never push
 extracted_prompts.md
 scratch_extract.js
+
+# GitLab Personal Access Token
+.gitlab_pat

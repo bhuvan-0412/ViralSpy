@@ -188,240 +188,161 @@ export async function POST(req: Request) {
     id: rawTrend.id || rawTrend.trendId || '',
   }
 
-  {
-    const isVercel = process.env.VERCEL === '1'
-    if (isVercel) {
-      const apiKey = process.env.GEMINI_API_KEY
-      if (!apiKey) {
-        return Response.json(
-          {
-            error: 'Gemini API key not configured on server.',
-            details: 'Add GEMINI_API_KEY to Vercel environment variables.',
-          },
-          { status: 500 }
-        )
-      }
+  const isVercel = process.env.VERCEL === '1'
 
-      try {
-        validateEnv()
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-        const serviceRoleKey = supabaseServiceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  if (isVercel) {
+    // Try Groq first (free), fall back to OpenAI
+    const groqKey = process.env.GROQ_API_KEY
+    const openaiKey = process.env.OPENAI_API_KEY
 
-        const supabase =
-          supabaseUrl && serviceRoleKey
-            ? createClient(supabaseUrl, serviceRoleKey, {
-                auth: {
-                  persistSession: false,
-                  autoRefreshToken: false,
-                },
-              })
-            : null
+    const apiKey = groqKey || openaiKey
+    const baseUrl = groqKey ? 'https://api.groq.com/openai/v1' : 'https://api.openai.com/v1'
+    const model = groqKey ? 'llama-3.3-70b-versatile' : 'gpt-4o'
 
-        const trendId = trend.id
-        const userId = body.userId
-        const forceRegenerate = body.forceRegenerate
+    console.log('Vercel brief generation:', {
+      usingGroq: !!groqKey,
+      usingOpenAI: !!openaiKey,
+      model,
+    })
 
-        const isRealTrend = supabase && trendId && !trendId.startsWith('demo-')
+    if (!apiKey) {
+      return Response.json(
+        {
+          error: 'No AI API key configured on Vercel.',
+          details: 'Add GROQ_API_KEY or OPENAI_API_KEY to Vercel environment variables.',
+        },
+        { status: 500 }
+      )
+    }
 
-        if (isRealTrend) {
-          if (forceRegenerate) {
-            await supabase!.from('briefs').delete().eq('trend_id', trendId)
-          } else {
-            const { data: cached } = await supabase!
-              .from('briefs')
-              .select('*')
-              .eq('trend_id', trendId)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle()
+    try {
+      const body = await req.json()
+      const trend = body.trend || body
 
-            if (cached) {
-              const formatted = {
-                ...cached,
-                angles:
-                  typeof cached.angles === 'string'
-                    ? JSON.parse(cached.angles)
-                    : cached.angles || [],
-                hashtags:
-                  typeof cached.hashtags === 'string'
-                    ? JSON.parse(cached.hashtags)
-                    : cached.hashtags || [],
-              }
-              return Response.json({ success: true, data: formatted })
-            }
-          }
-        }
-
-        let trendName = trend.name
-        let niche = trend.niche
-        let platform = trend.platform
-        let velocityScore = Number(trend.velocity_score)
-        let momentumStatus = trend.momentum_status
-        let dbTrendId = trendId
-
-        if (isRealTrend && !trendName) {
-          const { data: trendData } = await supabase!
-            .from('trends')
-            .select('*')
-            .eq('id', trendId)
-            .maybeSingle()
-
-          if (!trendData) {
-            return Response.json({ success: false, error: 'Trend not found' }, { status: 404 })
-          }
-          trendName = trendData.name
-          niche = trendData.niche
-          platform = trendData.platform
-          velocityScore = Number(trendData.velocity_score)
-          momentumStatus = trendData.momentum_status
-          dbTrendId = trendData.id
-        }
-
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: 'user',
-                  parts: [
-                    {
-                      text: `You are a viral content strategist who has helped 500+ creators hit 1M+ views. Given a trending topic generate a highly specific actionable content brief. Do NOT be generic. Every suggestion must be tailored to the exact trend.
-Respond ONLY with valid JSON, no markdown, no preamble:
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1000,
+          temperature: 0.8,
+          messages: [
+            {
+              role: 'system',
+              content: `You are a viral content strategist who helped 
+500+ creators hit 1M+ views. Generate a specific content brief for 
+the given trend. Respond ONLY with valid JSON, no markdown:
 {
   "hook": "under-8-word killer opening line",
   "angles": [
-    {"title": "ANGLE NAME", "description": "2-sentence specific description"},
-    {"title": "ANGLE NAME", "description": "2-sentence specific description"},
-    {"title": "ANGLE NAME", "description": "2-sentence specific description"}
+    {"title": "ANGLE NAME", "description": "2-sentence description"},
+    {"title": "ANGLE NAME", "description": "2-sentence description"},
+    {"title": "ANGLE NAME", "description": "2-sentence description"}
   ],
   "format": "TALKING_HEAD or POV or DUET or TUTORIAL or STORYTIME or TRANSITION",
   "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"],
   "best_post_time": "e.g. 6-8 PM weekdays",
-  "estimated_reach": "e.g. 80K-300K views for a 10K-follower account",
+  "estimated_reach": "e.g. 80K-300K views for 10K followers",
   "script_outline": "Act 1 (0-3s): hook. Act 2 (3-20s): build. Act 3 (20-30s): CTA"
-}
-
-Trend: ${trend.name}
+}`,
+            },
+            {
+              role: 'user',
+              content: `Trend: ${trend.name}
 Niche: ${trend.niche}
 Platform: ${trend.platform}
-Velocity score: ${trend.velocity_score}
+Velocity: ${trend.velocity_score}
 Momentum: ${trend.momentum_status}
-Generate a content brief for this exact trend.`,
-                    },
-                  ],
-                },
-              ],
-              generationConfig: {
-                responseMimeType: 'application/json',
-                temperature: 0.8,
-                maxOutputTokens: 1000,
-              },
-            }),
-          }
-        )
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(`Gemini API returned status ${response.status}: ${errorText}`)
-        }
-
-        const data = await response.json()
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-        if (!text) {
-          throw new Error('Empty response from Gemini API')
-        }
-
-        const strategistBrief = JSON.parse(text)
-
-        const briefData = {
-          trend_id: dbTrendId || '00000000-0000-0000-0000-000000000000',
-          user_id: userId || '00000000-0000-0000-0000-000000000000',
-          hook: strategistBrief.hook,
-          angles: strategistBrief.angles,
-          format: strategistBrief.format,
-          hashtags: strategistBrief.hashtags,
-          best_post_time: strategistBrief.best_post_time,
-          estimated_reach: strategistBrief.estimated_reach,
-          script_outline: strategistBrief.script_outline,
-          created_at: new Date().toISOString(),
-        }
-
-        if (!supabase || !dbTrendId || dbTrendId.startsWith('demo-')) {
-          return Response.json({
-            success: true,
-            data: {
-              id: `demo-brief-uuid-${Date.now()}`,
-              ...briefData,
+Generate a content brief.`,
             },
-          })
-        }
+          ],
+        }),
+      })
 
-        const { data: inserted, error: insertError } = await supabase
-          .from('briefs')
-          .insert({
-            trend_id: briefData.trend_id,
-            user_id: userId && !userId.startsWith('demo-') ? userId : null,
-            hook: briefData.hook,
-            angles:
-              typeof briefData.angles === 'string'
-                ? briefData.angles
-                : JSON.stringify(briefData.angles),
-            format: briefData.format,
-            hashtags:
-              typeof briefData.hashtags === 'string'
-                ? briefData.hashtags
-                : JSON.stringify(briefData.hashtags),
-            best_post_time: briefData.best_post_time,
-            estimated_reach: briefData.estimated_reach,
-            script_outline: briefData.script_outline,
-            model_used: 'gemini-2.5-flash',
-            prompt_version: 2,
-          })
-          .select()
-          .single()
+      const data = await response.json()
 
-        if (insertError) throw insertError
-
-        if (inserted) {
-          const formatted = {
-            ...inserted,
-            angles:
-              typeof inserted.angles === 'string'
-                ? JSON.parse(inserted.angles)
-                : inserted.angles || [],
-            hashtags:
-              typeof inserted.hashtags === 'string'
-                ? JSON.parse(inserted.hashtags)
-                : inserted.hashtags || [],
-          }
-          return Response.json({ success: true, data: formatted })
-        }
-
-        return Response.json(
-          { success: false, error: 'Failed to return inserted brief.' },
-          { status: 500 }
-        )
-      } catch (e: any) {
-        console.error('Gemini Brief error:', e)
+      if (!response.ok) {
+        console.error('AI API error:', data)
         return Response.json(
           {
-            error: e.message,
-            stack: e.stack?.split('\n').slice(0, 3).join(' | '),
+            error: 'AI API error',
+            details: data.error?.message || JSON.stringify(data),
           },
           { status: 500 }
         )
       }
+
+      const content = data.choices[0]?.message?.content || ''
+      console.log('AI response received, length:', content.length)
+
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        return Response.json(
+          {
+            error: 'Invalid AI response',
+            details: content.slice(0, 200),
+          },
+          { status: 500 }
+        )
+      }
+
+      const brief = JSON.parse(jsonMatch[0])
+
+      // Save to Supabase
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+
+      const { data: savedBrief, error: saveError } = await supabase
+        .from('briefs')
+        .insert({
+          trend_id: trend.id,
+          hook: brief.hook,
+          angles: brief.angles,
+          format: brief.format,
+          hashtags: brief.hashtags,
+          best_post_time: brief.best_post_time,
+          estimated_reach: brief.estimated_reach,
+          script_outline: brief.script_outline,
+          model_used: model,
+          prompt_version: 1,
+        })
+        .select()
+        .single()
+
+      if (saveError) {
+        console.error('Supabase save error:', saveError.message)
+        return Response.json({
+          data: { ...brief, id: 'temp-' + Date.now(), trend_id: trend.id },
+          cached: false,
+          warning: 'Brief generated but not saved: ' + saveError.message,
+        })
+      }
+
+      console.log('Brief saved successfully:', savedBrief.id)
+
+      return Response.json({
+        data: { ...savedBrief, ...brief },
+        cached: false,
+      })
+    } catch (error: any) {
+      console.error('Brief generation exception:', error)
+      return Response.json(
+        {
+          error: 'Brief generation failed',
+          details: error.message,
+        },
+        { status: 500 }
+      )
     }
   }
 
   // On Vercel, Ollama is unavailable — force OpenAI
-  const isVercel = process.env.VERCEL === '1'
   const provider = isVercel ? 'openai' : req.headers.get('x-ai-provider') || 'openai'
 
   const providerConfig = isVercel
