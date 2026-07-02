@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient, createServerClient } from '../../../lib/supabase-server'
 import { validateEnv } from '../../../lib/env'
 import { generateBrief } from '../../../lib/ai-provider'
+import { formatFewShotPrompt } from '@/lib/few-shot-examples'
 import { getOllamaUrl } from '../../../lib/wsl-detect'
 import { fetchCompetitorPosts } from '../../../lib/competitor-fetch'
 import { Brief, BriefFormatType, Angle } from '../../../types'
@@ -218,6 +219,7 @@ export async function POST(req: Request) {
     try {
       const body = await req.json()
       const trend = body.trend || body
+      const fewShotContext = formatFewShotPrompt(trend.niche)
 
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
@@ -233,18 +235,22 @@ export async function POST(req: Request) {
             {
               role: 'system',
               content: `You are a viral content strategist who helped 
-500+ creators hit 1M+ views. Generate a specific content brief for 
-the given trend. Respond ONLY with valid JSON, no markdown:
+500+ creators hit 1M+ views. Generate a highly specific, 
+actionable content brief tailored to the exact trend.
+Do NOT be generic. Every suggestion must be specific 
+to this exact trend and niche.
+${fewShotContext}
+Respond ONLY with valid JSON, no markdown, no preamble:
 {
-  "hook": "under-8-word killer opening line",
+  "hook": "under-8-word killer opening line that stops the scroll",
   "angles": [
-    {"title": "ANGLE NAME", "description": "2-sentence description"},
-    {"title": "ANGLE NAME", "description": "2-sentence description"},
-    {"title": "ANGLE NAME", "description": "2-sentence description"}
+    {"title": "ANGLE NAME IN CAPS", "description": "2-sentence specific description of exactly what to film"},
+    {"title": "ANGLE NAME IN CAPS", "description": "2-sentence specific description of exactly what to film"},
+    {"title": "ANGLE NAME IN CAPS", "description": "2-sentence specific description of exactly what to film"}
   ],
   "format": "TALKING_HEAD or POV or DUET or TUTORIAL or STORYTIME or TRANSITION",
   "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"],
-  "best_post_time": "e.g. 6-8 PM weekdays",
+  "best_post_time": "e.g. 6-8 PM IST weekdays",
   "estimated_reach": "e.g. 80K-300K views for 10K followers",
   "script_outline": "Act 1 (0-3s): hook. Act 2 (3-20s): build. Act 3 (20-30s): CTA"
 }`,
@@ -254,9 +260,9 @@ the given trend. Respond ONLY with valid JSON, no markdown:
               content: `Trend: ${trend.name}
 Niche: ${trend.niche}
 Platform: ${trend.platform}
-Velocity: ${trend.velocity_score}
+Velocity score: ${trend.velocity_score}
 Momentum: ${trend.momentum_status}
-Generate a content brief.`,
+Generate a specific content brief for this exact trend.`,
             },
           ],
         }),

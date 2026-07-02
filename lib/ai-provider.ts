@@ -1,3 +1,4 @@
+import { formatFewShotPrompt } from './few-shot-examples'
 import type { CompetitorPost } from './competitor-fetch'
 
 export type AIProvider = 'ollama' | 'byok'
@@ -11,8 +12,11 @@ interface BriefRequest {
   momentumStatus: string
 }
 
-const BRIEF_PROMPT = (req: BriefRequest, lang: string, competitors: CompetitorPost[] = []) => `
-You are a viral content strategist who helped 500+ creators hit 1M+ views.
+const BRIEF_PROMPT = (req: BriefRequest, lang: string, competitors: CompetitorPost[] = []) => {
+  const fewShotContext = formatFewShotPrompt(req.niche)
+  return `You are a viral content strategist who helped 500+ creators hit 1M+ views. Generate a highly specific, actionable content brief tailored to the exact trend.
+Do NOT be generic. Every suggestion must be specific to this exact trend and niche.
+${fewShotContext}
 
 Trend: ${req.trendName}
 Niche: ${req.niche}
@@ -75,6 +79,7 @@ Respond ONLY in valid JSON, no markdown, no backticks:
   "script_outline": "Hook (0-3s): ... Build (3-45s): ... CTA (45-60s): ..."
 }
 format must be one of: TALKING_HEAD, POV, DUET, TUTORIAL, STORYTIME, TRANSITION`
+}
 
 // ── Ollama (Local) ──────────────────────────────
 async function generateWithOllama(

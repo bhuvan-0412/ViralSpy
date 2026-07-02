@@ -1,5 +1,7 @@
 'use client'
 
+import { formatFewShotPrompt } from './few-shot-examples'
+
 interface BriefRequest {
   trendId: string
   trendName: string
@@ -10,11 +12,15 @@ interface BriefRequest {
   locale?: string
 }
 
-const BRIEF_PROMPT = (req: BriefRequest): string =>
-  `Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
+const BRIEF_PROMPT = (req: BriefRequest): string => {
+  const fewShotContext = formatFewShotPrompt(req.niche)
+  return `Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
 
 ### Instruction:
-You are ViralSpy AI, a viral content strategist. Generate a content brief. Return ONLY valid JSON with no extra fields beyond: hook, angles, format, hashtags, best_post_time, estimated_reach, script_outline.
+You are ViralSpy AI, a viral content strategist. Generate a highly specific, actionable content brief tailored to the exact trend.
+Do NOT be generic. Every suggestion must be specific to this exact trend and niche.
+${fewShotContext}
+Return ONLY valid JSON with no extra fields beyond: hook, angles, format, hashtags, best_post_time, estimated_reach, script_outline.
 
 ### Input:
 Trend: ${req.trendName}
@@ -25,6 +31,7 @@ Momentum: ${req.momentumStatus}
 
 ### Response:
 `
+}
 
 export async function generateBriefWithOllama(
   req: BriefRequest,
