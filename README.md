@@ -1,10 +1,14 @@
 # 🕵️‍♂️ ViralSpy
 
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-viral--spy--eight.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://viral-spy-eight.vercel.app)
+
 [![Next.js](https://img.shields.io/badge/Next.js-14%2F16-black?style=flat&logo=next.js)](https://nextjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38bdf8?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3ecf8e?style=flat&logo=supabase)](https://supabase.com/)
 [![Gemini / GPT-4o](https://img.shields.io/badge/AI%20Engine-Gemini%20%2F%20GPT--4o-orange?style=flat&logo=google-gemini)](https://deepmind.google/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> 🌐 **Live Demo:** [https://viral-spy-eight.vercel.app](https://viral-spy-eight.vercel.app)
 
 > **Velocity over Vanity.**
 > Total view counts are a trailing metric. ViralSpy tracks velocity to capture breakout topics before the algorithm reaches saturation.
